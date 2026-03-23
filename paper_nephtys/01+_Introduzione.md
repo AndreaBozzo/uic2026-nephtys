@@ -1,0 +1,7 @@
+# Resilient Telemetry Ingestion at the Edge: A Lightweight Connector for Pervasive Data Streams
+
+# I. Introduzione
+
+[cite_start]L'emergere delle Smart City e dell'Industrial IoT ha spostato l'attenzione dall'acquisizione di dati statici all'ingestione di dati continui e *in movimento* (streaming)[cite: 109]. Tuttavia, le infrastrutture tradizionali di *message brokering* (es. ecosistemi basati su JVM) risultano spesso troppo pesanti per essere eseguite sui gateway periferici (*edge*). Inoltre, trasmettere indiscriminatamente payload grezzi ad alta frequenza (come i flussi WebSocket) dai nodi *edge* ai server centralizzati satura rapidamente la larghezza di banda delle reti pervasive.
+
+[cite_start]Questa dimostrazione presenta **Nephtys**, un connettore leggero sviluppato in Go [cite: 89] che agisce come nodo di ingestione dati all'edge. [cite_start]Nephtys intercetta i flussi dati in tempo reale, li normalizza e li pubblica su NATS JetStream[cite: 89]. Il sistema completa concettualmente l'ecosistema di acquisizione pervasiva, affiancandosi agli estrattori di dati statici e non strutturati. [cite_start]L'obiettivo della demo è mostrare come l'uso di pipeline di *middleware* iniettate dinamicamente via REST API permetta di filtrare e deduplicare i dati direttamente sul nodo periferico[cite: 89, 142], ottimizzando il consumo di banda e garantendo la resilienza della rete.
