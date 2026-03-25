@@ -1,0 +1,14 @@
+# Nephtys: Lightweight Edge Connector for Bandwidth-Efficient Ingestion of Urban Sensor Streams
+
+## I. Introduction
+
+The rise of Smart City deployments and the Industrial Internet of Things (IIoT) has shifted the data-acquisition paradigm from static, batch-oriented collection to continuous, high-frequency streaming from ubiquitous sensor networks [1]. Urban air-quality monitoring stations, traffic sensors, and environmental probes generate telemetry at rates that quickly saturate the wide-area links connecting edge gateways to centralised cloud backends. At the same time, traditional message-brokering infrastructures — predominantly JVM-based systems such as Apache Kafka or RabbitMQ — impose memory and CPU requirements that exceed the budget of resource-constrained edge nodes [2].
+
+Existing lightweight alternatives, such as MQTT bridges or protocol translators, provide raw message forwarding but lack the ability to *process* data at the edge. Conversely, full-fledged stream-processing frameworks (e.g., Apache Flink, Kafka Streams) are designed for cluster-level deployment and are impractical on single-board computers or micro-gateways. This leaves a gap: there is no lightweight, edge-deployable solution that supports **runtime-reconfigurable processing pipelines** — the ability to inject, modify, or remove filtering, deduplication, and transformation logic on a live data stream without service interruption.
+
+This paper presents **Nephtys**, a telemetry ingestion connector developed in Go that fills this gap. Nephtys runs on constrained edge hardware and ingests real-time data streams from heterogeneous sources (WebSocket, REST polling, Server-Sent Events, Webhooks, gRPC). Each stream passes through a per-stream **middleware pipeline** — a composable chain of filter, transform, deduplicate, threshold, enrich, and batch stages — that can be injected or hot-swapped at runtime via a declarative REST API without restarting the stream. Processed events are published to NATS JetStream [3], which also serves as the sole persistence layer: stream configurations are stored in a JetStream Key-Value bucket, enabling zero-infrastructure state recovery after crashes or reboots.
+
+The contributions of this work are threefold:
+1. A **multi-protocol ingestion architecture** with native fault tolerance (exponential-backoff reconnection, graceful shutdown) designed for intermittent edge connectivity.
+2. A **dynamically reconfigurable middleware pipeline** engine that reduces upstream bandwidth by filtering, deduplicating, and compacting sensor payloads at the edge — demonstrated with a 60–85% bandwidth reduction on urban air-quality streams.
+3. A **zero-infrastructure persistence** model that eliminates the need for external databases on the edge, relying exclusively on the NATS JetStream subsystem for both event durability and configuration state.
