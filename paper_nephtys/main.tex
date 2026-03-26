@@ -78,7 +78,7 @@ All connectors implement automatic reconnection with \textbf{exponential backoff
 
 Edge nodes frequently lack the resources to run a relational database or even an embedded key-value store alongside the application. Nephtys addresses this by using \textbf{NATS JetStream}~\cite{nats2024} as both the event transport and the configuration store. Published sensor events are stored in a durable JetStream stream with configurable retention (default: 72 hours), surviving process restarts without data loss. Active stream configurations are serialized in a JetStream Key-Value bucket (\texttt{nephtys\_streams}). On startup, the Stream Manager reads all persisted entries and re-registers the corresponding connectors and pipelines, achieving full state recovery with no external dependencies.
 
-This design means Nephtys and NATS are the \emph{only two processes} required on an edge node, a minimal footprint suitable for single-board computers such as the Raspberry Pi~4.
+This design means Nephtys and NATS are the \emph{only two processes} required on an edge node, a minimal footprint suitable for single-board computers such as the Raspberry Pi~4. All connectors support TLS-encrypted upstream connections (WSS, HTTPS), and the management REST API is protected by Bearer-token authentication, preventing unauthorized pipeline reconfiguration.
 
 \subsection{Edge Pipeline for Bandwidth Reduction}
 
@@ -167,7 +167,7 @@ This paper presented Nephtys, a lightweight edge connector that demonstrates how
 
 The runtime reconfigurability of the pipeline, enabled by atomic pointer swapping, allows operators to adapt filtering behavior to changing conditions (e.g., tightening thresholds during pollution alerts) without interrupting data flow, a capability absent from existing lightweight edge solutions.
 
-Future work includes the addition of an MQTT connector to support legacy sensor deployments, the integration of lightweight ML-based anomaly detection as a pipeline middleware stage, and the federation of multiple Nephtys instances across a city-wide edge mesh for coordinated, distributed ingestion.
+Future work includes the addition of an MQTT connector to support legacy sensor deployments, the integration of lightweight ML-based anomaly detection as a pipeline middleware stage, and the federation of multiple Nephtys instances across a city-wide edge mesh for coordinated, distributed intelligence at the urban periphery.
 
 % ================================================================
 \bibliographystyle{IEEEtran}
