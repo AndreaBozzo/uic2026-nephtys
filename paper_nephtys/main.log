@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.3.24)  26 MAR 2026 12:40
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.3.24)  26 MAR 2026 12:44
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -858,8 +858,14 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <7> on input line 88.
 
 Underfull \hbox (badness 10000) in paragraph at lines 100--100
-\T1/lmr/m/n/8 paper _ demo _ Nephtys$[]; Nephtys source: []$https : / / github 
-. com /
+[][][][]\T1/lmr/m/n/8 Companion ma-te-rial: []$https : / / github . com / Andre
+aBozzo /
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 100--100
+\T1/lmr/m/n/8 uic2026-[]nephtys$[]; Nephtys source: []$https : / / github . com
+ /
  []
 
 
@@ -929,10 +935,6 @@ Before submitting the final camera ready copy, remember to:
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
-
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: D27AA726D2358A8F613844F76DBD80A7;1878.
  ) 
@@ -959,7 +961,7 @@ exmf/fonts/type1/public/lm/lmssbx10.pfb></usr/share/texmf/fonts/type1/public/lm
 /lmsy10.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy7.pfb></usr/share/texmf
 /fonts/type1/public/lm/lmtt10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt8
 .pfb>
-Output written on main.pdf (4 pages, 567574 bytes).
+Output written on main.pdf (4 pages, 567484 bytes).
 PDF statistics:
  277 PDF objects out of 1000 (max. 8388607)
  220 compressed objects within 3 object streams

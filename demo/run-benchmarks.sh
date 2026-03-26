@@ -18,9 +18,11 @@ SIM_DURATION="${1:-300}"
 REAL_DURATION="${2:-1800}"
 AUTH=(-H "Authorization: Bearer $TOKEN")
 
-# Helper: extract a metric delta between two snapshots
+# Helper: extract a metric value from a snapshot, default 0 if not found
 metric_val() {
-  echo "$1" | grep "$2" | awk '{print $2}' | head -1
+  local val
+  val=$(echo "$1" | grep "$2" | awk '{print $2}' | head -1)
+  echo "${val:-0}"
 }
 
 echo "============================================="

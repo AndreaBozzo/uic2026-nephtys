@@ -3,10 +3,11 @@
 Companion material for the IEEE UIC 2026 short paper:
 
 > **Nephtys: Lightweight Edge Connector for Bandwidth-Efficient Ingestion of Urban Sensor Streams**
-> Andrea Bozzo, University of Calabria
+> Andrea Bozzo, Independent Researcher
 
 This repository contains the sensor simulator, demo scripts, benchmark
 automation, and LaTeX source used to produce the results in the paper.
+A pre-compiled PDF is available at [`paper_nephtys/main.pdf`](paper_nephtys/main.pdf).
 Nephtys itself lives in a separate repository (see below).
 
 ## Prerequisites
@@ -25,7 +26,7 @@ Nephtys itself lives in a separate repository (see below).
 sensor-sim/          WebSocket-based air-quality simulator (Go)
 demo/
   register-streams.sh   Register demo streams on a running Nephtys instance
-  run-benchmarks.sh     Automated two-phase benchmark (baseline vs. pipeline)
+  run-benchmarks.sh     Automated three-phase benchmark (synthetic + real data)
   grafana-dashboard.json Pre-configured Grafana dashboard for live monitoring
 paper_nephtys/
   main.tex              LaTeX source (IEEEtran conference, 4 pages)
@@ -69,14 +70,16 @@ duplicate ratio, matching the paper's experimental setup.
 
 ```bash
 cd demo/
-./run-benchmarks.sh 300   # 300 seconds = 5 minutes per phase
+./run-benchmarks.sh 300 1800   # 5 min synthetic, 30 min real data
 ```
 
-The script runs two phases:
+The script runs three phases:
 
-1. **Baseline** -- ingests sensor data with no middleware pipeline.
-2. **Full pipeline** -- applies Transform, Dedup (TTL=30s), Threshold
+1. **Synthetic baseline** -- ingests sensor-sim data with no middleware pipeline.
+2. **Synthetic pipeline** -- applies Transform, Dedup (TTL=30s), Threshold
    (delta=1.0), and Batch (size=50, flush=5s).
+3. **Real-data streams** -- registers five REST poller streams hitting
+   Open-Meteo and Sensor.Community APIs with Transform + Dedup + Threshold.
 
 At the end it prints bandwidth reduction, message-count reduction, per-middleware
 drop breakdown, and RSS memory -- the numbers reported in Table I of the paper.
@@ -86,16 +89,17 @@ drop breakdown, and RSS memory -- the numbers reported in Table I of the paper.
 Import `demo/grafana-dashboard.json` into Grafana at `http://localhost:3000`
 to watch ingestion rates and reduction gauges in real time.
 
-### 6. (Optional) Real-world OpenAQ streams
+### 6. (Optional) Register demo streams manually
 
 ```bash
 cd demo/
 ./register-streams.sh
 ```
 
-This registers three REST poller streams pulling measurements from the OpenAQ
-v3 API for monitoring stations in Southern Italy (Cosenza, Catanzaro, Reggio
-Calabria).
+This registers the sensor-sim WebSocket stream, four Open-Meteo REST poller
+streams (weather + air quality for Cosenza, Catanzaro, Reggio Calabria), and
+one Sensor.Community citizen sensor stream (Gioia Tauro), all with full
+pipeline configurations.
 
 ## Compiling the Paper
 
