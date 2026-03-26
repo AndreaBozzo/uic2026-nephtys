@@ -8,7 +8,10 @@ Companion material for the IEEE UIC 2026 short paper:
 This repository contains the sensor simulator, demo scripts, benchmark
 automation, and LaTeX source used to produce the results in the paper.
 A pre-compiled PDF is available at [`paper_nephtys/main.pdf`](paper_nephtys/main.pdf).
-Nephtys itself lives in a separate repository (see below).
+Nephtys itself lives in a [separate repository](https://github.com/AndreaBozzo/Nephtys).
+
+![Grafana dashboard](paper_nephtys/fig_grafana_dashboard.png)
+*Grafana dashboard during a mixed workload showing ingested vs. published rates, per-middleware drop breakdown, and reduction gauges (65.7% bandwidth, 98.6% events).*
 
 ## Prerequisites
 
