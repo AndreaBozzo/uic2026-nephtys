@@ -53,7 +53,7 @@
   \node[mw, right=0.3cm of m2]  (m3) {Threshold};
   \node[mw, right=0.3cm of m3]  (m4) {Batch};
 
-  \node[api, below=0.8cm of m2] (api) {REST API~~\texttt{/v1/streams}};
+  \node[api, below=1.2cm of m2] (api) {REST API~~\texttt{/v1/streams}};
 
   \node[broker, right=1.2cm of m4] (nats) {NATS\\JetStream};
   \node[broker, below=0.6cm of nats, minimum width=1.8cm,
@@ -73,7 +73,7 @@
   \end{scope}
 
   \draw[decorate, decoration={brace, amplitude=4pt, mirror}, pipeorng!70!black]
-    ($(m1.south west)+(0,-0.12)$) -- ($(m4.south east)+(0,-0.12)$)
+    ($(m1.south west)+(0,-0.35)$) -- ($(m4.south east)+(0,-0.35)$)
     node[midway, below=6pt, font=\sffamily\scriptsize, text=pipeorng!70!black]
     {Middleware Pipeline};
 
