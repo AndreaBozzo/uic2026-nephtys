@@ -3,8 +3,8 @@
 
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
-\usepackage{url}
 \usepackage{hyperref}
+\usepackage{balance}
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{booktabs}
@@ -33,7 +33,7 @@
 \maketitle
 
 \begin{abstract}
-Smart City sensor networks generate continuous telemetry that must be ingested, filtered, and forwarded by resource-constrained edge gateways. Traditional message brokers are too heavy for edge deployment, while lightweight alternatives lack processing capabilities. We present \textbf{Nephtys}, a Go-based edge connector that ingests real-time data streams from heterogeneous sources (WebSocket, REST, SSE, gRPC) and processes them through per-stream middleware pipelines, i.e.\ composable chains of transform, deduplication, threshold filtering, and batching stages, that can be hot-swapped at runtime via a declarative REST API. Using NATS JetStream as the sole persistence and transport layer, Nephtys achieves zero-infrastructure state recovery with no external databases. We evaluate the system on an urban air-quality monitoring scenario with 20 simulated sensor stations and five real data feeds from the Open-Meteo and Sensor.Community APIs. Results on both synthetic and real data (Open-Meteo, Sensor.Community) show 69--84\% bandwidth reduction and up to 98.8\% message-count reduction within a 28.6\,MB memory footprint, with sub-16\,ms pipeline hot-reload latency and automatic reconnection after network failures.
+Smart City sensor networks generate continuous telemetry that must be ingested, filtered, and forwarded by resource-constrained edge gateways. Traditional message brokers are too heavy for edge deployment, while lightweight alternatives lack processing capabilities. We present \textbf{Nephtys}, a Go-based edge connector that ingests real-time data streams from heterogeneous sources (WebSocket, REST, SSE, gRPC) and processes them through per-stream middleware pipelines---composable chains of transform, deduplication, threshold filtering, and batching stages that can be hot-swapped at runtime via a declarative REST API. Using NATS JetStream as the sole persistence and transport layer, Nephtys achieves zero-infrastructure state recovery with no external databases. Results on an urban air-quality scenario with 20 simulated stations and five live data feeds show 69--84\% bandwidth reduction and up to 98.8\% message-count reduction within a 28.6\,MB memory footprint, with sub-16\,ms end-to-end pipeline hot-reload latency and automatic reconnection after network failures.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -47,7 +47,7 @@ Smart City deployments and the Industrial Internet of Things (IIoT) have shifted
 
 Existing lightweight alternatives, such as MQTT bridges~\cite{mqtt2019} or protocol translators, provide raw message forwarding but lack the ability to \emph{process} data at the edge. Conversely, full-fledged stream-processing frameworks (e.g., Apache Flink, Kafka Streams) are designed for cluster-level deployment and are impractical on single-board computers or micro-gateways~\cite{assuncao2018stream}. This leaves an open problem: no lightweight, edge-deployable solution currently supports \textbf{runtime-reconfigurable processing pipelines}, i.e.\ the ability to inject, modify, or remove filtering, deduplication, and transformation logic on a live data stream without service interruption.
 
-This paper presents \textbf{Nephtys}, a telemetry ingestion connector developed in Go~\cite{go2024} that addresses this problem. Nephtys runs on constrained edge hardware and ingests real-time data streams from heterogeneous sources (WebSocket, REST polling, Server-Sent Events, Webhooks, gRPC). Each stream passes through a per-stream \textbf{middleware pipeline}: a composable chain of filter, transform, deduplicate, threshold, enrich, and batch stages that can be injected or hot-swapped at runtime via a declarative REST API without restarting the stream. Processed events are published to NATS JetStream~\cite{nats2024}, which also serves as the sole persistence layer: stream configurations are stored in a JetStream Key-Value bucket, enabling zero-infrastructure state recovery after crashes or reboots.
+This paper presents \textbf{Nephtys}, a telemetry ingestion connector developed in Go~\cite{go2026} that addresses this problem. Nephtys runs on constrained edge hardware and ingests real-time data streams from heterogeneous sources (WebSocket, REST polling, Server-Sent Events, Webhooks, gRPC). Each stream passes through a per-stream \textbf{middleware pipeline}: a composable chain of filter, transform, deduplicate, threshold, enrich, and batch stages that can be injected or hot-swapped at runtime via a declarative REST API without restarting the stream. Processed events are published to NATS JetStream~\cite{nats2026}, which also serves as the sole persistence layer: stream configurations are stored in a JetStream Key-Value bucket, enabling zero-infrastructure state recovery after crashes or reboots.
 
 The contributions of this work are as follows:
 \begin{enumerate}
@@ -59,7 +59,7 @@ The contributions of this work are as follows:
 % ================================================================
 \section{System Architecture and Resilience}
 
-Nephtys targets the constraints of edge computing: limited memory, unreliable network connectivity, and the absence of orchestration infrastructure~\cite{shi2016edge}. Fig.~\ref{fig:arch} illustrates the overall architecture: urban sensor stations feed data into Nephtys through protocol-specific connectors; each stream traverses a configurable middleware pipeline before publication to NATS JetStream~\cite{nats2024}, from which cloud-side consumers subscribe.
+Nephtys targets the constraints of edge computing: limited memory, unreliable network connectivity, and the absence of orchestration infrastructure~\cite{shi2016edge}. Fig.~\ref{fig:arch} illustrates the overall architecture: urban sensor stations feed data into Nephtys through protocol-specific connectors; each stream traverses a configurable middleware pipeline before publication to NATS JetStream~\cite{nats2026}, from which cloud-side consumers subscribe.
 
 \begin{figure*}[t]
   \centering
@@ -76,7 +76,7 @@ All connectors implement automatic reconnection with \textbf{exponential backoff
 
 \subsection{Zero-Infrastructure Persistence}
 
-Edge nodes frequently lack the resources to run a relational database or even an embedded key-value store alongside the application. Nephtys addresses this by using \textbf{NATS JetStream}~\cite{nats2024} as both the event transport and the configuration store. Published sensor events are stored in a durable JetStream stream with configurable retention (default: 72 hours), surviving process restarts without data loss. Active stream configurations are serialized in a JetStream Key-Value bucket (\texttt{nephtys\_streams}). On startup, the Stream Manager reads all persisted entries and re-registers the corresponding connectors and pipelines, achieving full state recovery with no external dependencies.
+Edge nodes frequently lack the resources to run a relational database or even an embedded key-value store alongside the application. Nephtys addresses this by using \textbf{NATS JetStream}~\cite{nats2026} as both the event transport and the configuration store. Published sensor events are stored in a durable JetStream stream with configurable retention (default: 72 hours), surviving process restarts without data loss. Active stream configurations are serialized in a JetStream Key-Value bucket (\texttt{nephtys\_streams}). On startup, the Stream Manager reads all persisted entries and re-registers the corresponding connectors and pipelines, achieving full state recovery with no external dependencies.
 
 This design means Nephtys and NATS are the \emph{only two processes} required on an edge node, a minimal footprint suitable for single-board computers such as the Raspberry Pi~4. All connectors support TLS-encrypted upstream connections (WSS, HTTPS), and the management REST API is protected by Bearer-token authentication, preventing unauthorized pipeline reconfiguration.
 
@@ -97,22 +97,22 @@ The pipeline configuration is a JSON object attached to each stream registration
 % ================================================================
 \section{Evaluation Scenario}
 
-We evaluate Nephtys in an urban air-quality monitoring scenario representative of a Smart City edge deployment. All source code, the sensor simulator, and an automated benchmark script are publicly available in the companion repository\footnote{Companion material: \url{https://github.com/AndreaBozzo/uic2026-nephtys}; Nephtys source: \url{https://github.com/AndreaBozzo/Nephtys}} to allow full reproducibility of the results presented below.
+We evaluate Nephtys in an urban air-quality monitoring scenario representative of a Smart City edge deployment. All source code, the sensor simulator, and an automated benchmark script are publicly available\footnote{\sloppy\url{https://github.com/AndreaBozzo/uic2026-nephtys} (companion material); \url{https://github.com/AndreaBozzo/Nephtys} (Nephtys source).} to allow full reproducibility of the results presented below.
 
 \subsection{Experimental Setup}
 
 Nephtys runs on a host machine; NATS JetStream, Prometheus, and Grafana are co-deployed via Docker Compose. Two classes of data sources feed the system:
 
 \begin{enumerate}
-  \item \textbf{Synthetic sensor streams}: A lightweight WebSocket-based simulator (\texttt{sensor-sim}) generates air-quality readings for 20~virtual stations at 2\,Hz, producing ${\sim}40$~events/s. Each event contains PM$_{2.5}$, PM$_{10}$, NO$_2$, temperature, and humidity values with configurable jitter and a 30\% duplicate ratio, modeling the redundancy typical of low-cost particulate-matter sensors.
-  \item \textbf{Real-world open data}: Five REST poller streams ingest live measurements from the Open-Meteo weather and air-quality APIs~\cite{openmeteo2024} for three cities in Calabria (Cosenza, Catanzaro, Reggio Calabria) and from a Sensor.Community~\cite{sensorcommunity2024} citizen PM sensor near Gioia Tauro, polled every 30--60\,seconds.
+  \item \textbf{Synthetic streams.} A lightweight WebSocket-based simulator (\texttt{sensor-sim}) generates air-quality readings for 20~virtual stations at 2\,Hz, producing ${\sim}40$~events/s. Each event carries PM$_{2.5}$, PM$_{10}$, NO$_2$, temperature, and humidity values with configurable jitter and a 30\% duplicate ratio, modeling the redundancy typical of low-cost particulate-matter sensors.
+  \item \textbf{Real-world open data.} Five REST poller streams ingest live measurements from the Open-Meteo weather and air-quality APIs~\cite{openmeteo2026} for three cities in Calabria (Cosenza, Catanzaro, Reggio~Calabria) and from a Sensor.Community~\cite{sensorcommunity2026} citizen PM sensor near Gioia Tauro, polled every 30--60\,seconds.
 \end{enumerate}
 
 The full middleware pipeline is configured as: Transform (5 fields extracted), Dedup (TTL\,=\,30\,s, cache\,=\,500), Threshold (path\,=\,\texttt{pm25}, $\delta$\,=\,1.0\,$\mu$g/m$^3$), Batch (size\,=\,50, flush\,=\,5\,s).
 
 \subsection{Results}
 
-Table~\ref{tab:results} reports metrics from two experiments: (a)~a 5-minute synthetic run with 20 virtual stations at 2\,Hz (${\sim}40$ events/s, 30\% duplicate ratio), and (b)~a 30-minute real-data run with five REST poller streams hitting the Open-Meteo~\cite{openmeteo2024} and Sensor.Community~\cite{sensorcommunity2024} APIs.
+Table~\ref{tab:results} reports metrics from two experiments: (a)~a 5-minute synthetic run with 20 virtual stations at 2\,Hz (${\sim}40$ events/s, 30\% duplicate ratio), and (b)~a 30-minute real-data run with five REST poller streams hitting the Open-Meteo~\cite{openmeteo2026} and Sensor.Community~\cite{sensorcommunity2026} APIs. Results are from single representative runs; the deterministic synthetic workload limits variability, but we acknowledge the absence of repeated trials as a limitation.
 
 \begin{table}[t]
   \centering
@@ -133,6 +133,8 @@ Table~\ref{tab:results} reports metrics from two experiments: (a)~a 5-minute syn
     RSS memory          & \multicolumn{2}{c}{28.6\,MB} & ---    \\
     \bottomrule
   \end{tabular}
+  \vspace{2pt}
+  \newline{\footnotesize RSS via Prometheus \texttt{process\_resident\_memory\_bytes} at steady state.}
 \end{table}
 
 \textbf{Synthetic workload.} The bandwidth reduction is decomposed by middleware stage using the Prometheus counter \texttt{events\_dropped\_by\_pipeline\_total}. Of the 12,120 events ingested, \textbf{Dedup} dropped 3,713 (78.7\% of all drops), i.e.\ redundant identical readings within the 30\,s TTL window. \textbf{Threshold} filtered an additional 1,005 events (21.3\% of drops), corresponding to sub-delta PM$_{2.5}$ fluctuations. The remaining 7,402 events were compacted by \textbf{Batch} into 149~messages (avg.\ 50 events per message), and \textbf{Transform} reduced the per-event payload from 227 to 116~bytes (49\% reduction).
@@ -148,7 +150,7 @@ Fig.~\ref{fig:dashboard} shows the Grafana dashboard captured during the benchma
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{fig_grafana_dashboard.png}
-  \caption{Grafana dashboard during a mixed workload (synthetic + real-data streams), showing ingested vs.\ published rates, per-middleware drop breakdown, and reduction gauges (65.7\% bandwidth, 98.6\% events).}
+  \caption{Grafana dashboard during a mixed workload (synthetic + real-data streams), showing ingested vs.\ published rates, per-middleware drop breakdown, and instantaneous reduction gauges (65.7\% bandwidth, 98.6\% events at capture time; final aggregates in Table~\ref{tab:results}).}
   \label{fig:dashboard}
 \end{figure}
 
@@ -157,9 +159,9 @@ Fig.~\ref{fig:dashboard} shows the Grafana dashboard captured during the benchma
 
 \subsection{Related Work}
 
-Several frameworks target data processing at the IoT edge, but each carries trade-offs that Nephtys addresses. \textbf{EdgeX Foundry}~\cite{edgex2024} is a comprehensive, microservice-based edge platform whose multi-container deployment model imposes considerable resource overhead (typically ${>}$\,512\,MB RAM). \textbf{Eclipse Kura}~\cite{kura2024} provides an OSGi-based Java runtime for IoT gateways, but its JVM dependency conflicts with the minimal-footprint goal. \textbf{MQTT bridges}~\cite{mqtt2019} offer lightweight forwarding but no processing capability. \textbf{Node-RED}~\cite{nodered2024} enables visual flow-based programming for IoT, but its Node.js runtime results in higher memory consumption and lower throughput.
+Several frameworks target data processing at the IoT edge, but each carries trade-offs that Nephtys addresses. \textbf{EdgeX Foundry}~\cite{edgex2026} is a comprehensive, microservice-based edge platform whose multi-container deployment model imposes considerable resource overhead (typically ${>}$\,512\,MB RAM). \textbf{Eclipse Kura}~\cite{kura2026} provides an OSGi-based Java runtime for IoT gateways, but its JVM dependency requires ${\sim}$\,200\,MB RAM at idle, conflicting with the minimal-footprint goal. \textbf{MQTT bridges}~\cite{mqtt2019} offer lightweight forwarding but no processing capability. \textbf{Node-RED}~\cite{nodered2026} enables visual flow-based programming for IoT, but its Node.js runtime requires ${\sim}$\,80\,MB RAM and yields lower throughput than compiled alternatives.
 
-Nephtys differentiates itself through the combination of (i)~a compiled, single-binary Go~\cite{go2024} deployment with ${<}$\,30\,MB RSS, (ii)~a per-stream middleware pipeline that is hot-swappable at runtime via REST API, and (iii)~zero-infrastructure persistence using NATS JetStream~\cite{nats2024} as the sole backing store.
+Nephtys differentiates itself through the combination of (i)~a compiled, single-binary Go~\cite{go2026} deployment with ${<}$\,30\,MB RSS, (ii)~a per-stream middleware pipeline that is hot-swappable at runtime via REST API, and (iii)~zero-infrastructure persistence using NATS JetStream~\cite{nats2026} as the sole backing store.
 
 \subsection{Conclusions}
 
@@ -167,9 +169,12 @@ This paper presented Nephtys, a lightweight edge connector that demonstrates how
 
 The runtime reconfigurability of the pipeline, enabled by atomic pointer swapping, allows operators to adapt filtering behavior to changing conditions (e.g., tightening thresholds during pollution alerts) without interrupting data flow, a capability absent from existing lightweight edge solutions.
 
+Current limitations include the relatively short real-data evaluation window (30~minutes), the reliance on at-least-once delivery semantics (applications requiring exactly-once guarantees or complex event processing should use heavier frameworks), and the single-node scope of the evaluation---multi-node federation remains untested.
+
 Future work includes the addition of an MQTT connector to support legacy sensor deployments, the integration of lightweight ML-based anomaly detection as a pipeline middleware stage, and the federation of multiple Nephtys instances across a city-wide edge mesh for coordinated, distributed intelligence at the urban periphery.
 
 % ================================================================
+\balance
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 

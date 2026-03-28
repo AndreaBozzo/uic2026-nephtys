@@ -49,39 +49,39 @@ M.~D. de~Assun\c{c}\~{a}o, A.~da~Silva~Veith, and R.~Buyya, ``Distributed data
   future directions,'' \emph{Journal of Network and Computer Applications},
   vol. 103, pp. 1--17, 2018.
 
-\bibitem{go2024}
+\bibitem{go2026}
 {The Go Authors}, ``The {Go} programming language specification,''
-  \url{https://go.dev/ref/spec}, 2024, accessed: 2026-03-26.
+  \url{https://go.dev/ref/spec}, 2026, accessed: 2026-03-26.
 
-\bibitem{nats2024}
+\bibitem{nats2026}
 {NATS Authors}, ``{NATS} -- the cloud native messaging system,''
-  \url{https://nats.io}, 2024, accessed: 2026-03-26.
+  \url{https://nats.io}, 2026, accessed: 2026-03-26.
 
 \bibitem{fnv2019}
 G.~Fowler, L.~C. Noll, K.-P. Vo, D.~E. Eastlake, III, and T.~Hansen, ``The
   {FNV} non-cryptographic hash algorithm,'' IETF Internet-Draft,
   \url{https://datatracker.ietf.org/doc/html/draft-eastlake-fnv-17}, 2019,
-  informational.
+  internet-Draft (expired).
 
-\bibitem{openmeteo2024}
+\bibitem{openmeteo2026}
 P.~Zippenfenig, ``{Open-Meteo} -- free weather {API},''
-  \url{https://open-meteo.com}, 2024, accessed: 2026-03-26.
+  \url{https://open-meteo.com}, 2026, accessed: 2026-03-26.
 
-\bibitem{sensorcommunity2024}
+\bibitem{sensorcommunity2026}
 {Sensor.Community}, ``{Sensor.Community} -- a contributors driven global sensor
-  network,'' \url{https://sensor.community}, 2024, accessed: 2026-03-26.
+  network,'' \url{https://sensor.community}, 2026, accessed: 2026-03-26.
 
-\bibitem{edgex2024}
+\bibitem{edgex2026}
 {LF Edge}, ``{EdgeX Foundry} -- open-source edge computing platform for
-  {IoT},'' \url{https://www.edgexfoundry.org}, 2024, accessed: 2026-03-26.
+  {IoT},'' \url{https://www.edgexfoundry.org}, 2026, accessed: 2026-03-26.
 
-\bibitem{kura2024}
+\bibitem{kura2026}
 {Eclipse Foundation}, ``Eclipse {Kura} -- the extensible open source
-  {Java/OSGi} {IoT} edge framework,'' \url{https://eclipse.dev/kura/}, 2024,
+  {Java/OSGi} {IoT} edge framework,'' \url{https://eclipse.dev/kura/}, 2026,
   accessed: 2026-03-26.
 
-\bibitem{nodered2024}
+\bibitem{nodered2026}
 {OpenJS Foundation}, ``{Node-RED} -- low-code programming for event-driven
-  applications,'' \url{https://nodered.org}, 2024, accessed: 2026-03-26.
+  applications,'' \url{https://nodered.org}, 2026, accessed: 2026-03-26.
 
 \end{thebibliography}
