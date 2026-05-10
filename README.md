@@ -18,7 +18,7 @@ Nephtys itself lives in a [separate repository](https://github.com/AndreaBozzo/N
 | Component | Version | Notes |
 |-----------|---------|-------|
 | [Nephtys](https://github.com/AndreaBozzo/Nephtys) | commit `14b548b` or later | Edge connector under evaluation |
-| Go | 1.22+ | To build sensor-sim and Nephtys |
+| Go | 1.25+ | To build sensor-sim and Nephtys |
 | Docker + Docker Compose | any recent | For NATS, Prometheus, Grafana |
 | Python 3 | 3.8+ | Benchmark result computation |
 | jq | any | Used by demo scripts |

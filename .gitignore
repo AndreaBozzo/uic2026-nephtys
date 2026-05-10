@@ -9,3 +9,6 @@ texput.log
 
 # OS
 .DS_Store
+
+# Go build artifacts
+sensor-sim/sensor-sim

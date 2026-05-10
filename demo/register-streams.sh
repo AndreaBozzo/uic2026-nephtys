@@ -17,7 +17,7 @@ TOKEN="${NEPHTYS_ADMIN_TOKEN:-bench}"
 AUTH=(-H "Authorization: Bearer $TOKEN")
 
 echo "==> Registering sensor-sim WebSocket stream"
-curl -s -X POST "$BASE/v1/streams" \
+curl -fsS -X POST "$BASE/v1/streams" \
   -H "Content-Type: application/json" "${AUTH[@]}" \
   -d '{
   "id":    "sensor-sim",
@@ -42,7 +42,8 @@ curl -s -X POST "$BASE/v1/streams" \
     "threshold": {
       "enabled": true,
       "path":    "pm25",
-      "delta":   1.0
+      "delta":   1.0,
+      "group_by": "station"
     },
     "batch": {
       "enabled":        true,
@@ -54,7 +55,7 @@ curl -s -X POST "$BASE/v1/streams" \
 
 echo ""
 echo "==> Registering Open-Meteo weather stream (Cosenza)"
-curl -s -X POST "$BASE/v1/streams" \
+curl -fsS -X POST "$BASE/v1/streams" \
   -H "Content-Type: application/json" "${AUTH[@]}" \
   -d '{
   "id":    "meteo-cosenza",
@@ -101,7 +102,7 @@ for i in "${!AQ_NAMES[@]}"; do
   LON="${AQ_LONS[$i]}"
   NAME="${AQ_NAMES[$i]}"
   echo "==> Registering Open-Meteo air quality: $NAME"
-  curl -s -X POST "$BASE/v1/streams" \
+  curl -fsS -X POST "$BASE/v1/streams" \
     -H "Content-Type: application/json" "${AUTH[@]}" \
     -d "{
     \"id\":    \"aq-${NAME}\",
@@ -139,7 +140,7 @@ for i in "${!AQ_NAMES[@]}"; do
 done
 
 echo "==> Registering Sensor.Community citizen sensor (Gioia Tauro, #78066)"
-curl -s -X POST "$BASE/v1/streams" \
+curl -fsS -X POST "$BASE/v1/streams" \
   -H "Content-Type: application/json" "${AUTH[@]}" \
   -d '{
   "id":    "sensor-community-78066",
@@ -170,4 +171,4 @@ curl -s -X POST "$BASE/v1/streams" \
 
 echo ""
 echo "==> All streams registered. Check status:"
-curl -s "$BASE/v1/streams" "${AUTH[@]}" | jq .
+curl -fsS "$BASE/v1/streams" "${AUTH[@]}" | jq .

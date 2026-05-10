@@ -21,8 +21,14 @@ AUTH=(-H "Authorization: Bearer $TOKEN")
 # Helper: extract a metric value from a snapshot, default 0 if not found
 metric_val() {
   local val
-  val=$(echo "$1" | grep "$2" | awk '{print $2}' | head -1)
+  val=$(echo "$1" | grep -E "$2" | awk '{print $2}' | head -1 || true)
   echo "${val:-0}"
+}
+
+metrics_for() {
+  local metrics
+  metrics=$(curl -fsS "$BASE/metrics")
+  echo "$metrics" | grep -E "$1" | grep -v '^#' || true
 }
 
 echo "============================================="
@@ -33,7 +39,7 @@ echo "============================================="
 cleanup() {
   echo "==> Cleaning up streams..."
   for sid in bench-baseline bench-pipeline real-meteo-cosenza real-aq-cosenza real-aq-catanzaro real-aq-reggio real-citizen-78066; do
-    curl -s -X DELETE "$BASE/v1/streams/$sid" "${AUTH[@]}" 2>/dev/null || true
+    curl -fsS -X DELETE "$BASE/v1/streams/$sid" "${AUTH[@]}" >/dev/null 2>&1 || true
   done
 }
 trap cleanup EXIT
@@ -43,7 +49,7 @@ trap cleanup EXIT
 ###########################################################
 echo ""
 echo "==> Phase 1: Synthetic baseline (no pipeline, ${SIM_DURATION}s)"
-curl -s -X POST "$BASE/v1/streams" \
+curl -fsS -X POST "$BASE/v1/streams" \
   -H "Content-Type: application/json" "${AUTH[@]}" \
   -d '{
   "id": "bench-baseline",
@@ -53,10 +59,10 @@ curl -s -X POST "$BASE/v1/streams" \
 }' > /dev/null
 
 sleep 3
-T0_BL=$(curl -s "$BASE/metrics" | grep 'bench-baseline' | grep -v '^#')
+T0_BL=$(metrics_for 'bench-baseline')
 echo "   Collecting for ${SIM_DURATION}s..."
 sleep "$SIM_DURATION"
-T1_BL=$(curl -s "$BASE/metrics" | grep 'bench-baseline' | grep -v '^#')
+T1_BL=$(metrics_for 'bench-baseline')
 
 bl_events_in_0=$(metric_val "$T0_BL" 'events_ingested_total')
 bl_events_in_1=$(metric_val "$T1_BL" 'events_ingested_total')
@@ -67,7 +73,7 @@ bl_events_pub_1=$(metric_val "$T1_BL" 'events_published_total')
 bl_bytes_pub_0=$(metric_val "$T0_BL" 'bytes_published_total')
 bl_bytes_pub_1=$(metric_val "$T1_BL" 'bytes_published_total')
 
-curl -s -X DELETE "$BASE/v1/streams/bench-baseline" "${AUTH[@]}" > /dev/null
+curl -fsS -X DELETE "$BASE/v1/streams/bench-baseline" "${AUTH[@]}" > /dev/null
 echo "   Synthetic baseline complete."
 
 ###########################################################
@@ -75,7 +81,7 @@ echo "   Synthetic baseline complete."
 ###########################################################
 echo ""
 echo "==> Phase 2: Synthetic with pipeline (${SIM_DURATION}s)"
-curl -s -X POST "$BASE/v1/streams" \
+curl -fsS -X POST "$BASE/v1/streams" \
   -H "Content-Type: application/json" "${AUTH[@]}" \
   -d '{
   "id": "bench-pipeline",
@@ -100,7 +106,8 @@ curl -s -X POST "$BASE/v1/streams" \
     "threshold": {
       "enabled": true,
       "path":    "pm25",
-      "delta":   1.0
+      "delta":   1.0,
+      "group_by": "station"
     },
     "batch": {
       "enabled":        true,
@@ -111,10 +118,10 @@ curl -s -X POST "$BASE/v1/streams" \
 }' > /dev/null
 
 sleep 3
-T0_PL=$(curl -s "$BASE/metrics" | grep 'bench-pipeline' | grep -v '^#')
+T0_PL=$(metrics_for 'bench-pipeline')
 echo "   Collecting for ${SIM_DURATION}s..."
 sleep "$SIM_DURATION"
-T1_PL=$(curl -s "$BASE/metrics" | grep 'bench-pipeline' | grep -v '^#')
+T1_PL=$(metrics_for 'bench-pipeline')
 
 pl_events_in_0=$(metric_val "$T0_PL" 'events_ingested_total')
 pl_events_in_1=$(metric_val "$T1_PL" 'events_ingested_total')
@@ -124,12 +131,12 @@ pl_events_pub_0=$(metric_val "$T0_PL" 'events_published_total')
 pl_events_pub_1=$(metric_val "$T1_PL" 'events_published_total')
 pl_bytes_pub_0=$(metric_val "$T0_PL" 'bytes_published_total')
 pl_bytes_pub_1=$(metric_val "$T1_PL" 'bytes_published_total')
-pl_dedup_0=$(metric_val "$T0_PL" 'dedup')
-pl_dedup_1=$(metric_val "$T1_PL" 'dedup')
-pl_thresh_0=$(metric_val "$T0_PL" 'threshold')
-pl_thresh_1=$(metric_val "$T1_PL" 'threshold')
+pl_dedup_0=$(metric_val "$T0_PL" 'events_dropped_by_pipeline_total\{.*middleware="dedup"')
+pl_dedup_1=$(metric_val "$T1_PL" 'events_dropped_by_pipeline_total\{.*middleware="dedup"')
+pl_thresh_0=$(metric_val "$T0_PL" 'events_dropped_by_pipeline_total\{.*middleware="threshold"')
+pl_thresh_1=$(metric_val "$T1_PL" 'events_dropped_by_pipeline_total\{.*middleware="threshold"')
 
-curl -s -X DELETE "$BASE/v1/streams/bench-pipeline" "${AUTH[@]}" > /dev/null
+curl -fsS -X DELETE "$BASE/v1/streams/bench-pipeline" "${AUTH[@]}" > /dev/null
 echo "   Synthetic pipeline complete."
 
 ###########################################################
@@ -140,7 +147,7 @@ echo "==> Phase 3: Real-data streams (${REAL_DURATION}s)"
 
 # Register 5 real-data streams
 echo "   Registering Open-Meteo weather (Cosenza)..."
-curl -s -X POST "$BASE/v1/streams" \
+curl -fsS -X POST "$BASE/v1/streams" \
   -H "Content-Type: application/json" "${AUTH[@]}" \
   -d '{
   "id": "real-meteo-cosenza",
@@ -170,7 +177,7 @@ REAL_AQ_IDS=("real-aq-cosenza" "real-aq-catanzaro" "real-aq-reggio")
 
 for i in "${!REAL_AQ_IDS[@]}"; do
   echo "   Registering Open-Meteo AQ (${REAL_AQ_IDS[$i]})..."
-  curl -s -X POST "$BASE/v1/streams" \
+  curl -fsS -X POST "$BASE/v1/streams" \
     -H "Content-Type: application/json" "${AUTH[@]}" \
     -d "{
     \"id\": \"${REAL_AQ_IDS[$i]}\",
@@ -196,7 +203,7 @@ for i in "${!REAL_AQ_IDS[@]}"; do
 done
 
 echo "   Registering Sensor.Community citizen sensor (#78066)..."
-curl -s -X POST "$BASE/v1/streams" \
+curl -fsS -X POST "$BASE/v1/streams" \
   -H "Content-Type: application/json" "${AUTH[@]}" \
   -d '{
   "id": "real-citizen-78066",
@@ -222,37 +229,41 @@ echo "   5 real-data streams registered."
 
 sleep 3
 # Snapshot T0 for all real streams
-T0_REAL=$(curl -s "$BASE/metrics" | grep -E 'real-(meteo|aq|citizen)' | grep -v '^#')
+T0_REAL=$(metrics_for 'real-(meteo|aq|citizen)')
 echo "   Collecting for ${REAL_DURATION}s..."
 sleep "$REAL_DURATION"
-T1_REAL=$(curl -s "$BASE/metrics" | grep -E 'real-(meteo|aq|citizen)' | grep -v '^#')
+T1_REAL=$(metrics_for 'real-(meteo|aq|citizen)')
 
 # Aggregate across all real streams
-r_events_in_0=$(echo "$T0_REAL" | grep 'events_ingested_total' | awk '{s+=$2} END{print s+0}')
-r_events_in_1=$(echo "$T1_REAL" | grep 'events_ingested_total' | awk '{s+=$2} END{print s+0}')
-r_bytes_in_0=$(echo "$T0_REAL" | grep 'bytes_ingested_total' | awk '{s+=$2} END{print s+0}')
-r_bytes_in_1=$(echo "$T1_REAL" | grep 'bytes_ingested_total' | awk '{s+=$2} END{print s+0}')
-r_events_pub_0=$(echo "$T0_REAL" | grep 'events_published_total' | awk '{s+=$2} END{print s+0}')
-r_events_pub_1=$(echo "$T1_REAL" | grep 'events_published_total' | awk '{s+=$2} END{print s+0}')
-r_bytes_pub_0=$(echo "$T0_REAL" | grep 'bytes_published_total' | awk '{s+=$2} END{print s+0}')
-r_bytes_pub_1=$(echo "$T1_REAL" | grep 'bytes_published_total' | awk '{s+=$2} END{print s+0}')
-r_dedup_0=$(echo "$T0_REAL" | grep 'dedup' | awk '{s+=$2} END{print s+0}')
-r_dedup_1=$(echo "$T1_REAL" | grep 'dedup' | awk '{s+=$2} END{print s+0}')
-r_thresh_0=$(echo "$T0_REAL" | grep 'threshold' | awk '{s+=$2} END{print s+0}')
-r_thresh_1=$(echo "$T1_REAL" | grep 'threshold' | awk '{s+=$2} END{print s+0}')
+r_events_in_0=$(echo "$T0_REAL" | awk '/events_ingested_total/ {s+=$2} END{print s+0}')
+r_events_in_1=$(echo "$T1_REAL" | awk '/events_ingested_total/ {s+=$2} END{print s+0}')
+r_bytes_in_0=$(echo "$T0_REAL" | awk '/bytes_ingested_total/ {s+=$2} END{print s+0}')
+r_bytes_in_1=$(echo "$T1_REAL" | awk '/bytes_ingested_total/ {s+=$2} END{print s+0}')
+r_events_pub_0=$(echo "$T0_REAL" | awk '/events_published_total/ {s+=$2} END{print s+0}')
+r_events_pub_1=$(echo "$T1_REAL" | awk '/events_published_total/ {s+=$2} END{print s+0}')
+r_bytes_pub_0=$(echo "$T0_REAL" | awk '/bytes_published_total/ {s+=$2} END{print s+0}')
+r_bytes_pub_1=$(echo "$T1_REAL" | awk '/bytes_published_total/ {s+=$2} END{print s+0}')
+r_dedup_0=$(echo "$T0_REAL" | awk '/events_dropped_by_pipeline_total/ && /middleware="dedup"/ {s+=$2} END{print s+0}')
+r_dedup_1=$(echo "$T1_REAL" | awk '/events_dropped_by_pipeline_total/ && /middleware="dedup"/ {s+=$2} END{print s+0}')
+r_thresh_0=$(echo "$T0_REAL" | awk '/events_dropped_by_pipeline_total/ && /middleware="threshold"/ {s+=$2} END{print s+0}')
+r_thresh_1=$(echo "$T1_REAL" | awk '/events_dropped_by_pipeline_total/ && /middleware="threshold"/ {s+=$2} END{print s+0}')
 
 # Clean up real streams
 for sid in real-meteo-cosenza real-aq-cosenza real-aq-catanzaro real-aq-reggio real-citizen-78066; do
-  curl -s -X DELETE "$BASE/v1/streams/$sid" "${AUTH[@]}" > /dev/null 2>&1 || true
+  curl -fsS -X DELETE "$BASE/v1/streams/$sid" "${AUTH[@]}" > /dev/null 2>&1 || true
 done
 echo "   Real-data phase complete."
 
 ###########################################################
 # Memory
 ###########################################################
-NEPHTYS_PID=$(pgrep -f nephtys | head -1)
-RSS_KB=$(ps -o rss= -p "$NEPHTYS_PID" 2>/dev/null || echo "0")
-RSS_MB=$(echo "scale=1; $RSS_KB / 1024" | bc)
+NEPHTYS_PID=$(pgrep -f '[n]ephtys' | head -1 || true)
+if [[ -n "$NEPHTYS_PID" ]]; then
+  RSS_KB=$(ps -o rss= -p "$NEPHTYS_PID" 2>/dev/null || echo "0")
+else
+  RSS_KB=0
+fi
+RSS_MB=$(awk "BEGIN {printf \"%.1f\", $RSS_KB / 1024}")
 
 ###########################################################
 # Report
