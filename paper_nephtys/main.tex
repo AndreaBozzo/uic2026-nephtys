@@ -161,7 +161,7 @@ Fig.~\ref{fig:dashboard} shows the Grafana dashboard captured during the benchma
 
 Table~\ref{tab:comparison} compares capabilities rather than mixing memory figures measured under different workloads. EdgeX Foundry~\cite{edgex2026} is a broad microservice-based IoT platform, while MQTT bridges~\cite{mqtt2019} focus on broker-to-broker forwarding. Node-RED~\cite{nodered2026} provides general flow-based processing and persists deployed flows to files. Redpanda Connect is the closest configuration-driven comparator: its streams mode exposes runtime CRUD for isolated processor pipelines, but an update shuts down and replaces the affected stream~\cite{redpandaconnect2026}. Nephtys deliberately offers fewer processors and sinks; its narrower distinction is swapping a processing chain while retaining the running source connector, coupled with JetStream-backed registration state.
 
-\begin{table}[t]
+\begin{table}[b]
   \centering
   \caption{Qualitative comparison of overlapping edge-ingestion tools.}
   \label{tab:comparison}
