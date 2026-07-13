@@ -63,11 +63,12 @@ Nephtys listens on `http://localhost:3002` by default.
 
 ```bash
 cd sensor-sim/
-go run main.go -stations 20 -interval 500 -dup-ratio 0.3 -port 9091
+go run main.go -stations 20 -interval 500 -dup-ratio 0.3 -seed 2646958770 -port 9091
 ```
 
 This launches 20 virtual air-quality stations emitting at 2 Hz with a 30%
-duplicate ratio, matching the paper's experimental setup.
+duplicate ratio and a deterministic random seed, matching the paper's
+experimental setup and making repeated synthetic trials comparable.
 
 ### 4. Run the benchmark
 
@@ -86,6 +87,18 @@ The script runs three phases:
 
 At the end it prints bandwidth reduction, message-count reduction, per-middleware
 drop breakdown, and RSS memory -- the numbers reported in Table I of the paper.
+
+For the camera-ready repeated-trial protocol, retain raw counters and logs from
+three complete trials:
+
+```bash
+cd demo/
+bash ./run-repeated-benchmarks.sh 3 300 1800
+```
+
+Results are written to a timestamped directory under `demo/results/`. The live
+API phase is useful ecological validation but is not deterministic; controlled
+comparisons should use the fixed-seed synthetic phase.
 
 ### 5. (Optional) Live dashboard
 

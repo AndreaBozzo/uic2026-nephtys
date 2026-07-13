@@ -9,6 +9,9 @@
 #
 # Usage: ./run-benchmarks.sh [SIM_DURATION] [REAL_DURATION]
 #   Defaults: SIM_DURATION=300 (5 min), REAL_DURATION=1800 (30 min)
+# Optional environment:
+#   RUN_ID=1 RESULTS_CSV=results/runs.csv ./run-benchmarks.sh
+#   appends the raw aggregate counters for this run to a CSV file.
 
 set -euo pipefail
 
@@ -16,6 +19,7 @@ BASE="http://localhost:3002"
 TOKEN="${NEPHTYS_ADMIN_TOKEN:-bench}"
 SIM_DURATION="${1:-300}"
 REAL_DURATION="${2:-1800}"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
 AUTH=(-H "Authorization: Bearer $TOKEN")
 
 # Helper: extract a metric value from a snapshot, default 0 if not found
@@ -257,13 +261,10 @@ echo "   Real-data phase complete."
 ###########################################################
 # Memory
 ###########################################################
-NEPHTYS_PID=$(pgrep -f '[n]ephtys' | head -1 || true)
-if [[ -n "$NEPHTYS_PID" ]]; then
-  RSS_KB=$(ps -o rss= -p "$NEPHTYS_PID" 2>/dev/null || echo "0")
-else
-  RSS_KB=0
-fi
-RSS_MB=$(awk "BEGIN {printf \"%.1f\", $RSS_KB / 1024}")
+RSS_BYTES=$(curl -fsS "$BASE/metrics" \
+  | awk '/^process_resident_memory_bytes / {print $2; exit}')
+RSS_BYTES="${RSS_BYTES:-0}"
+RSS_MB=$(awk "BEGIN {printf \"%.1f\", $RSS_BYTES / 1024 / 1024}")
 
 ###########################################################
 # Report
@@ -273,7 +274,7 @@ echo "============================================="
 echo " RESULTS"
 echo "============================================="
 
-python3 -c "
+"$PYTHON_BIN" -c "
 bl_ev_in  = ${bl_events_in_1} - ${bl_events_in_0}
 bl_ev_pub = ${bl_events_pub_1} - ${bl_events_pub_0}
 bl_by_in  = ${bl_bytes_in_1} - ${bl_bytes_in_0}
@@ -322,3 +323,43 @@ if r_total_drops > 0:
 print()
 print(f'RSS memory:              ${RSS_MB} MB')
 "
+
+if [[ -n "${RESULTS_CSV:-}" ]]; then
+  mkdir -p "$(dirname "$RESULTS_CSV")"
+  "$PYTHON_BIN" - "$RESULTS_CSV" "${RUN_ID:-1}" \
+    "$SIM_DURATION" "$REAL_DURATION" \
+    "$bl_events_in_0" "$bl_events_in_1" "$bl_events_pub_0" "$bl_events_pub_1" \
+    "$bl_bytes_in_0" "$bl_bytes_in_1" "$bl_bytes_pub_0" "$bl_bytes_pub_1" \
+    "$pl_events_in_0" "$pl_events_in_1" "$pl_events_pub_0" "$pl_events_pub_1" \
+    "$pl_bytes_in_0" "$pl_bytes_in_1" "$pl_bytes_pub_0" "$pl_bytes_pub_1" \
+    "$pl_dedup_0" "$pl_dedup_1" "$pl_thresh_0" "$pl_thresh_1" \
+    "$r_events_in_0" "$r_events_in_1" "$r_events_pub_0" "$r_events_pub_1" \
+    "$r_bytes_in_0" "$r_bytes_in_1" "$r_bytes_pub_0" "$r_bytes_pub_1" \
+    "$r_dedup_0" "$r_dedup_1" "$r_thresh_0" "$r_thresh_1" "$RSS_MB" <<'PY'
+import csv
+import os
+import sys
+from datetime import datetime, timezone
+
+path, run_id, sim_duration, real_duration, *values = sys.argv[1:]
+names = [
+    "bl_events_in_0", "bl_events_in_1", "bl_events_pub_0", "bl_events_pub_1",
+    "bl_bytes_in_0", "bl_bytes_in_1", "bl_bytes_pub_0", "bl_bytes_pub_1",
+    "pl_events_in_0", "pl_events_in_1", "pl_events_pub_0", "pl_events_pub_1",
+    "pl_bytes_in_0", "pl_bytes_in_1", "pl_bytes_pub_0", "pl_bytes_pub_1",
+    "pl_dedup_0", "pl_dedup_1", "pl_thresh_0", "pl_thresh_1",
+    "real_events_in_0", "real_events_in_1", "real_events_pub_0", "real_events_pub_1",
+    "real_bytes_in_0", "real_bytes_in_1", "real_bytes_pub_0", "real_bytes_pub_1",
+    "real_dedup_0", "real_dedup_1", "real_thresh_0", "real_thresh_1", "rss_mb",
+]
+header = ["timestamp_utc", "run_id", "sim_duration_s", "real_duration_s", *names]
+row = [datetime.now(timezone.utc).isoformat(), run_id, sim_duration, real_duration, *values]
+write_header = not os.path.exists(path) or os.path.getsize(path) == 0
+with open(path, "a", newline="", encoding="utf-8") as handle:
+    writer = csv.writer(handle)
+    if write_header:
+        writer.writerow(header)
+    writer.writerow(row)
+print(f"Raw run counters appended to {path}")
+PY
+fi

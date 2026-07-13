@@ -34,6 +34,7 @@ func main() {
 	intervalMs := flag.Int("interval", 500, "emission interval per station in milliseconds")
 	port := flag.Int("port", 9090, "WebSocket server port")
 	dupRatio := flag.Float64("dup-ratio", 0.3, "fraction of duplicate readings (0.0-1.0)")
+	seed := flag.Uint64("seed", 2646958770, "deterministic random seed")
 	flag.Parse()
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
@@ -46,6 +47,7 @@ func main() {
 
 		log.Printf("client connected, streaming %d stations every %dms (dup ratio %.0f%%)",
 			*stations, *intervalMs, *dupRatio*100)
+		rng := rand.New(rand.NewPCG(*seed, *seed^0x9e3779b97f4a7c15))
 
 		ticker := time.NewTicker(time.Duration(*intervalMs) * time.Millisecond)
 		defer ticker.Stop()
@@ -60,13 +62,13 @@ func main() {
 		bases := make([]state, *stations)
 		for i := range bases {
 			bases[i] = state{
-				lat:   39.30 + rand.Float64()*0.1,
-				lon:   16.20 + rand.Float64()*0.1,
-				pm25:  10 + rand.Float64()*30,
-				pm10:  20 + rand.Float64()*50,
-				no2:   5 + rand.Float64()*40,
-				temp:  15 + rand.Float64()*15,
-				humid: 40 + rand.Float64()*40,
+				lat:   39.30 + rng.Float64()*0.1,
+				lon:   16.20 + rng.Float64()*0.1,
+				pm25:  10 + rng.Float64()*30,
+				pm10:  20 + rng.Float64()*50,
+				no2:   5 + rng.Float64()*40,
+				temp:  15 + rng.Float64()*15,
+				humid: 40 + rng.Float64()*40,
 			}
 		}
 
@@ -78,18 +80,18 @@ func main() {
 
 				r := Reading{
 					StationID:   fmt.Sprintf("AQ-%03d", i),
-					PM25:        b.pm25 + rand.Float64()*2 - 1,
-					PM10:        b.pm10 + rand.Float64()*4 - 2,
-					NO2:         b.no2 + rand.Float64()*3 - 1.5,
-					Temperature: b.temp + rand.Float64()*0.6 - 0.3,
-					Humidity:    b.humid + rand.Float64()*2 - 1,
+					PM25:        b.pm25 + rng.Float64()*2 - 1,
+					PM10:        b.pm10 + rng.Float64()*4 - 2,
+					NO2:         b.no2 + rng.Float64()*3 - 1.5,
+					Temperature: b.temp + rng.Float64()*0.6 - 0.3,
+					Humidity:    b.humid + rng.Float64()*2 - 1,
 					Lat:         b.lat,
 					Lon:         b.lon,
 					Timestamp:   time.Now().UnixMilli(),
 				}
 
 				// Simulate duplicates: re-send previous payload.
-				if lastPayload != nil && rand.Float64() < *dupRatio {
+				if lastPayload != nil && rng.Float64() < *dupRatio {
 					if err := conn.WriteMessage(websocket.TextMessage, lastPayload); err != nil {
 						return
 					}
