@@ -33,7 +33,7 @@
 \maketitle
 
 \begin{abstract}
-Smart City sensor networks generate continuous telemetry that must be ingested, filtered, and forwarded by resource-conscious edge gateways. Existing tools span forwarding-oriented brokers and broader integration or stream-processing platforms, leaving different trade-offs in processing scope, reconfiguration semantics, and deployment footprint. We present \textbf{Nephtys}, a Go-based edge connector that ingests heterogeneous real-time sources (WebSocket, REST, SSE, webhooks, and gRPC) through per-stream middleware pipelines---composable chains of transformation, deduplication, threshold filtering, and batching stages that can be hot-swapped through a declarative REST API. NATS JetStream provides transport, event durability, and configuration storage without a separate application database. Across three trials with 20 simulated stations and five live feeds, Nephtys reduced bytes by 67.30\,$\pm$\,0.03\% and 88.96\,$\pm$\,0.34\%, respectively, while using 25.60\,$\pm$\,0.26\,MB connector RSS.
+Smart City sensor networks generate continuous telemetry that must be ingested, filtered, and forwarded by resource-conscious edge gateways. Existing tools span forwarding-oriented brokers and broader integration or stream-processing platforms, leaving different trade-offs in processing scope, reconfiguration semantics, and deployment footprint. We present \textbf{Nephtys}, a Go-based edge connector that ingests heterogeneous real-time sources (WebSocket, REST, SSE, webhooks, and gRPC) through hot-swappable per-stream middleware pipelines. NATS JetStream provides transport, event durability, and configuration storage without a separate application database. Three trials with 20 simulated stations reduced bytes by 67.30\% and messages by 98.71\%; five live feeds showed 88.96\,$\pm$\,0.34\% byte reduction. Against an equivalent Node-RED flow on identical event sequences, both systems produced identical reductions and near-identical latency, while Nephtys used 19.14\,$\pm$\,0.07\,MB versus 109.60\,$\pm$\,0.40\,MB tool RSS.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -108,7 +108,7 @@ Nephtys runs natively on Windows~11 (Intel Core Ultra~7 258V, 32\,GB RAM); NATS 
   \item \textbf{Real-world open data.} Five REST poller streams ingest live measurements from the Open-Meteo weather and air-quality APIs~\cite{openmeteo2026} for three cities in Calabria (Cosenza, Catanzaro, Reggio~Calabria) and from a Sensor.Community~\cite{sensorcommunity2026} citizen PM sensor near Gioia Tauro, polled every 30--60\,seconds.
 \end{enumerate}
 
-The full middleware pipeline is configured as: Transform (5 fields extracted), Dedup (TTL\,=\,30\,s, cache\,=\,500), Threshold (path\,=\,\texttt{pm25}, $\delta$\,=\,1.0\,$\mu$g/m$^3$), Batch (size\,=\,50, flush\,=\,5\,s).
+The full middleware pipeline is configured as: Transform (5 fields extracted), Dedup (TTL\,=\,30\,s, cache\,=\,500), Threshold (path\,=\,\texttt{pm25}, $\delta$\,=\,1.0\,$\mu$g/m$^3$), Batch (size\,=\,50, flush\,=\,5\,s). A controlled comparison uses Node-RED~5.0.1 natively on the same host with core WebSocket, JSON, Change, RBE, and Join nodes plus a thin NATS JavaScript client wrapper. Its immediate RBE and global deadband match the observed semantics of the pinned Nephtys revision for this workload. A neutral subscriber verifies the timestamp-independent retained-event sequence and measures normalized output bytes and generation-to-publication latency. Tool RSS is Windows working set; CPU is normalized so 100\% denotes one logical CPU. Each system processes the same 12,000-event sequence after a discarded 1,200-event warm-up, in interleaved order over three trials.
 
 \subsection{Results}
 
@@ -123,21 +123,17 @@ Table~\ref{tab:results} reports three trials of two experiments: (a)~a 5-minute 
     \textbf{Metric} & \textbf{Baseline} & \textbf{Pipeline} & \textbf{Reduction} \\
     \midrule
     \multicolumn{4}{@{}l}{\emph{Synthetic streams (20 stations, 5\,min)}} \\
-    \quad Bytes published     & 2,736,478 & 894,897  & 67.30$\pm$0.03\% \\
-    \quad Messages published  & 12,027    & 155      & 98.71$\pm$0.00\% \\
+    \quad Bytes published     & 2,730,398 & 892,955  & 67.30$\pm$0.00\% \\
+    \quad Messages published  & 12,000    & 155      & 98.71$\pm$0.00\% \\
     \midrule
     \multicolumn{4}{@{}l}{\emph{Real-data streams (5 APIs, 30\,min)}} \\
     \quad Bytes published     & 142,489 & 15,729  & 88.96$\pm$0.34\% \\
     \quad Messages published  & 270     & 20      & 92.71$\pm$0.22\% \\
-    \midrule
-    RSS memory          & \multicolumn{2}{c}{25.60\,MB} & $\pm$0.26\,MB \\
     \bottomrule
   \end{tabular}
-  \vspace{2pt}
-  \newline{\footnotesize RSS via Prometheus \texttt{process\_resident\_memory\_bytes} at steady state.}
 \end{table}
 
-\textbf{Synthetic workload.} Per trial, the pipeline ingested a mean of 12,027 events. \textbf{Dedup} dropped 3,574 and \textbf{Threshold} another 686 on average; the remaining events were compacted by \textbf{Batch} into 155 messages (about 50 events per batch). Together with \textbf{Transform}, this reduced published bytes by 67.30\% and message count by 98.71\%.
+\textbf{Synthetic workload.} Each controlled trial ingested exactly 12,000 events; 7,733 survived Dedup and Threshold and were compacted into 155 batches. Transform and filtering reduced published bytes by 67.30\% and message count by 98.71\%. The retained-event sequence was identical across systems in every paired trial.
 
 \textbf{Real-data workload.} Across the five live API streams, each 30-minute trial ingested 270 events on average; Dedup dropped 158 and Threshold 92, leaving 20 published messages. Transform and filtering jointly reduced bytes by 88.96\% and message count by 92.71\%. One trial experienced a Sensor.Community connection reset and recovered at the next poll, illustrating live-input variability.
 
@@ -145,21 +141,33 @@ Table~\ref{tab:results} reports three trials of two experiments: (a)~a 5-minute 
 
 \textbf{Hot-reload latency.} Issuing a \texttt{PUT} request to change the threshold delta completes in under 16\,ms (including the full HTTP round-trip). The atomic pointer swap ensures the new pipeline takes effect on the very next event, with no loss or reordering.
 
-Fig.~\ref{fig:dashboard} shows the Grafana dashboard captured during the benchmark, displaying the real-time bandwidth and event reduction ratios.
-
-\begin{figure}[t]
+\begin{table}[t]
   \centering
-  \includegraphics[width=\columnwidth]{fig_grafana_dashboard.png}
-  \caption{Grafana dashboard during a mixed workload (synthetic + real-data streams), showing ingested vs.\ published rates, per-middleware drop breakdown, and instantaneous reduction gauges (65.7\% bandwidth, 98.6\% events at capture time; final aggregates in Table~\ref{tab:results}).}
-  \label{fig:dashboard}
-\end{figure}
+  \caption{Controlled comparison (mean $\pm$ sample SD; three trials).}
+  \label{tab:controlled}
+  \begin{tabular}{@{}lrr@{}}
+    \toprule
+    \textbf{Metric} & \textbf{Nephtys} & \textbf{Node-RED} \\
+    \midrule
+    Byte reduction (\%) & 67.30$\pm$0.00 & 67.30$\pm$0.00 \\
+    Message reduction (\%) & 98.71$\pm$0.00 & 98.71$\pm$0.00 \\
+    Tool RSS (MB) & 19.14$\pm$0.07 & 109.60$\pm$0.40 \\
+    Tool + NATS RSS (MB) & 27.15$\pm$0.09 & 117.31$\pm$0.36 \\
+    CPU (\% of one core) & 0.03$\pm$0.02 & 0.31$\pm$0.08 \\
+    Latency p50 (ms) & 1004.33$\pm$0.58 & 1006.33$\pm$0.58 \\
+    Latency p95 (ms) & 2004.33$\pm$0.58 & 2006.67$\pm$0.58 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Table~\ref{tab:controlled} shows that the equivalent flows have identical reduction and similar latency, dominated by batching. Nephtys uses 82.5\% less tool RSS and 76.9\% less complete-stack RSS than Node-RED under this configuration. CPU utilization is low for both at ${\sim}40$ events/s, so no saturation claim is made.
 
 % ================================================================
 \section{Related Work and Conclusions}
 
 \subsection{Related Work}
 
-Table~\ref{tab:comparison} compares capabilities rather than mixing memory figures measured under different workloads. EdgeX Foundry~\cite{edgex2026} is a broad microservice-based IoT platform, while MQTT bridges~\cite{mqtt2019} focus on broker-to-broker forwarding. Node-RED~\cite{nodered2026} provides general flow-based processing and persists deployed flows to files. Redpanda Connect is the closest configuration-driven comparator: its streams mode exposes runtime CRUD for isolated processor pipelines, but an update shuts down and replaces the affected stream~\cite{redpandaconnect2026}. Nephtys deliberately offers fewer processors and sinks; its narrower distinction is swapping a processing chain while retaining the running source connector, coupled with JetStream-backed registration state.
+Table~\ref{tab:comparison} compares capabilities separately from the controlled Node-RED measurement. EdgeX Foundry~\cite{edgex2026} is a broad microservice-based IoT platform, while MQTT bridges~\cite{mqtt2019} focus on broker-to-broker forwarding. Node-RED~\cite{nodered2026} provides general flow-based processing and persists deployed flows to files. Redpanda Connect is the closest configuration-driven comparator: its streams mode exposes runtime CRUD for isolated processor pipelines, but an update shuts down and replaces the affected stream~\cite{redpandaconnect2026}. Nephtys deliberately offers fewer processors and sinks; its narrower distinction is swapping a processing chain while retaining the running source connector, coupled with JetStream-backed registration state.
 
 \begin{table}[b]
   \centering
@@ -182,13 +190,13 @@ Table~\ref{tab:comparison} compares capabilities rather than mixing memory figur
 
 \subsection{Conclusions}
 
-This paper presented Nephtys, a lightweight edge connector that demonstrates how compiled languages and lightweight message brokers can enable bandwidth-efficient telemetry ingestion for Smart City sensor networks. By shifting deduplication, transformation, and threshold filtering to the edge through declaratively configurable middleware pipelines~\cite{assuncao2018stream}, the system reduced bytes by 67.30\% on the synthetic workload and 88.96\% on the live workload, with 25.60\,MB mean connector RSS.
+This paper presented Nephtys, a lightweight edge connector that demonstrates how compiled languages and lightweight message brokers can enable bandwidth-efficient telemetry ingestion for Smart City sensor networks. By shifting deduplication, transformation, and threshold filtering to the edge through declaratively configurable middleware pipelines~\cite{assuncao2018stream}, the system reduced bytes by 67.30\% on the controlled synthetic workload and 88.96\% on the live workload. An equivalent Node-RED flow confirmed identical reduction and latency within 3\,ms, while Nephtys used 19.14\,MB mean tool RSS versus 109.60\,MB.
 
 The runtime-reconfigurable pipeline allows operators to adapt filtering behavior (e.g., tightening thresholds during pollution alerts) without restarting the source connector. The contribution is the evaluated combination of this update boundary, heterogeneous acquisition, and reuse of the NATS durability layer---not a claim that runtime-reconfigurable stream processing is unique to Nephtys.
 
-Current limitations include only three trials, a 30-minute live-data window with changing upstream values, host-machine rather than single-board-computer measurements, no controlled quantitative platform baseline, and a single-node deployment. The evaluated system also uses at-least-once delivery, and pipeline hot-swaps are not persisted across restart. These constraints limit statistical and platform-level generalization of the reported results.
+Current limitations include only three trials, a 30-minute live-data window with changing upstream values, host-machine rather than single-board-computer measurements, one quantitative platform baseline, and a single-node deployment. The pinned revision applies threshold state globally rather than per station. The evaluated system also uses at-least-once delivery, and pipeline hot-swaps are not persisted across restart. These constraints limit statistical and platform-level generalization of the reported results.
 
-Immediate future work is a repeated, controlled evaluation on edge hardware against a representative flow-based baseline. Longer-term work will investigate adaptive pipeline policies that trade information loss and processing latency against bandwidth and resource budgets, using multi-node sensor deployments only after the single-node operating envelope is characterized.
+Immediate future work is validation on edge hardware and broader controlled baselines. Longer-term work will investigate adaptive pipeline policies that trade information loss and processing latency against bandwidth and resource budgets, using multi-node sensor deployments only after the single-node operating envelope is characterized.
 
 % ================================================================
 \balance

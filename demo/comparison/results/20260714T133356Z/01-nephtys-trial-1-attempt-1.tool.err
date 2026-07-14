@@ -1,0 +1,17 @@
+2026/07/14 15:34:19 INFO Starting Nephtys Edge Connector version=dev
+2026/07/14 15:34:19 INFO Connected to NATS with JetStream url=nats://127.0.0.1:4322
+2026/07/14 15:34:19 INFO JetStream stream ready component=broker name=NEPHTYS subjects=[nephtys.stream.>]
+2026/07/14 15:34:19 INFO Stream config store ready bucket=nephtys_streams
+2026/07/14 15:34:19 INFO No persisted streams to restore component=manager
+2026/07/14 15:34:19 INFO Admin auth enabled
+2026/07/14 15:34:19 INFO REST API listening component=server addr=:3002
+2026/07/14 15:34:20 INFO Stream config saved component=store id=compare-nephtys
+2026/07/14 15:34:20 INFO Source registered and started component=manager id=compare-nephtys
+2026/07/14 15:34:20 INFO Connecting connector=compare-nephtys url=ws://127.0.0.1:9091/ws
+2026/07/14 15:34:20 INFO Connected connector=compare-nephtys
+2026/07/14 15:34:56 INFO Stream config deleted component=store id=compare-nephtys
+2026/07/14 15:34:56 INFO Source removed component=manager id=compare-nephtys
+2026/07/14 15:34:56 INFO Stream config saved component=store id=compare-nephtys
+2026/07/14 15:34:56 INFO Source registered and started component=manager id=compare-nephtys
+2026/07/14 15:34:56 INFO Connecting connector=compare-nephtys url=ws://127.0.0.1:9091/ws
+2026/07/14 15:34:56 INFO Connected connector=compare-nephtys

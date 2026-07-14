@@ -27,7 +27,7 @@ The paper is already accepted, and Reviewer 2 explicitly presented edge-hardware
 4. aggregate results with dispersion;
 5. an explicit limitation that edge-device and controlled platform comparisons remain future work.
 
-Purchasing a Raspberry Pi, implementing a Node-RED benchmark, and adding a scale sweep are deferred. They are not camera-ready blockers.
+Purchasing a Raspberry Pi and adding a scale sweep remain deferred. The controlled Node-RED comparison was subsequently completed and added to the camera-ready evaluation.
 
 Post-camera-ready evaluation order: run controlled competitor benchmarks first.
 Treat Raspberry Pi measurements and feature/scale expansion as optional final
@@ -38,7 +38,7 @@ work, undertaken only if time remains and the comparison results justify it.
 | Novelty is moderate and primarily integrative | Position Nephtys as an evaluated systems design point, not a new algorithm or universal platform | Revised abstract, introduction, related work, and conclusion | Drafted |
 | The claim that no lightweight solution supports runtime reconfiguration is too strong | Replace exclusivity claims with cautious combination-based wording | Comparison against Node-RED, Redpanda Connect, EdgeX Foundry, and MQTT bridging | Drafted |
 | Recent related work is incomplete | Add Redpanda Connect and distinguish stream replacement from Nephtys's in-place pipeline swap | Official project documentation and compact comparison table | Drafted |
-| Direct comparison with established platforms is missing | Add a capability table now; retain a controlled Node-RED experiment as explicitly scoped future work | Official documentation and cautious limitation language | Camera-ready draft complete; quantitative run deferred |
+| Direct comparison with established platforms is missing | Run an equivalent Node-RED flow against the identical controlled sequence | Three interleaved trials, neutral output collector, matched sequence hashes | Complete |
 | Evaluation uses a small deployment | State the limitation explicitly; add a stream-count/load sweep only if it fits the schedule | 20/50/100 stream or equivalent event-rate sweep | Planned, secondary |
 | Results come from a single run | Repeat each retained quantitative experiment at least three times | Mean and sample standard deviation from retained raw counters | Complete |
 | Actual edge hardware is not evaluated | Remove unsupported Raspberry Pi claims and disclose host-machine evaluation | Revised claims and limitations | Camera-ready draft complete; device run deferred |
@@ -85,13 +85,14 @@ The submitted manuscript contains the following claims that require correction o
 - Measure idle and loaded RSS, mean/peak CPU, median/p95 processing latency, achieved event rate, and bandwidth reduction.
 - Do not include Raspberry Pi language in the paper if no such device is tested.
 
-### Deferred experiment C: controlled baseline
+### Completed experiment C: controlled baseline
 
-- Preferred baseline: Node-RED because both reviewers recognize it and it represents a common edge integration choice.
-- Use the same sensor simulator, equivalent transform/dedup/threshold/batch behavior, and the same NATS destination where feasible.
-- Measure both the processing process and total required stack; NATS is common to both deployments and should be reported consistently.
-- Document all third-party Node-RED nodes and versions. If equivalent semantics cannot be implemented without substantial custom code, disclose that limitation rather than presenting an unfair number.
-- Redpanda Connect, EdgeX Foundry, and Mosquitto remain qualitative table entries unless they are run under the identical protocol.
+- Baseline: Node-RED 5.0.1, running natively with its core WebSocket, JSON, Change, RBE, and Join nodes.
+- The only custom glue is a NATS JetStream sink using the pinned official JavaScript client packages.
+- Both systems process the same deterministic 12,000-event sequence after a discarded 1,200-event warm-up; three measured trials are interleaved.
+- A neutral NATS subscriber normalizes the Nephtys envelope, checks timestamp-independent accepted-event sequence hashes, and measures output and latency.
+- Tool-only and tool-plus-NATS CPU/RSS boundaries are retained. Redpanda Connect, EdgeX Foundry, and Mosquitto remain qualitative entries.
+- The pinned Nephtys revision uses global threshold state despite accepting a `group_by` field; Node-RED's separate-topic behavior is disabled to match the evaluated implementation.
 
 ### Deferred experiment D: scale sweep
 
@@ -107,7 +108,7 @@ The submitted manuscript contains the following claims that require correction o
 - [x] Related-work comparison table included
 - [x] Retained results repeated at least three times
 - [x] Unsupported edge-hardware language removed; device experiment deferred
-- [x] Quantitative comparison absence transparently scoped as a limitation
+- [x] Controlled quantitative Node-RED comparison included
 - [x] Limitations include small scale, single node, delivery semantics, transient hot-swap state, and baseline scope
 - [x] Four-page limit checked; extra pages used only by explicit decision
 - [x] LaTeX compiles without warnings that affect publication
@@ -126,3 +127,15 @@ The submitted manuscript contains the following claims that require correction o
 - Toolchain: Go 1.26.4 windows/amd64; Docker Engine 29.6.1; NATS container image `nats:latest`
 - Mean $\pm$ sample SD: synthetic bytes 67.30 $\pm$ 0.03%, synthetic messages 98.71 $\pm$ 0.00%, live bytes 88.96 $\pm$ 0.34%, live messages 92.71 $\pm$ 0.22%, connector RSS 25.60 $\pm$ 0.26 MB
 - One Sensor.Community TCP reset occurred in trial 1 and recovered at the next REST polling interval. The synthetic workload was unaffected. The interrupted third attempt is archived separately and excluded; trial 3 was rerun in full.
+
+## Retained controlled comparison
+
+- Results: `demo/comparison/results/20260714T133356Z/runs.csv`
+- Summary: `demo/comparison/results/20260714T133356Z/summary.md`
+- All six slots completed on attempt 1; no invalid attempt was retained.
+- Paired timestamp-independent accepted-event hashes matched in all three trials.
+- Both systems: 67.30% byte reduction, 98.71% message reduction, 7,733 retained events, and 155 output batches.
+- Tool RSS mean: Nephtys 19.14 +/- 0.07 MB; Node-RED 109.60 +/- 0.40 MB.
+- Tool-plus-NATS RSS mean: Nephtys 27.15 +/- 0.09 MB; Node-RED 117.31 +/- 0.36 MB.
+- CPU mean (100% = one logical CPU): Nephtys 0.03 +/- 0.02%; Node-RED 0.31 +/- 0.08%.
+- Latency p95: Nephtys 2004.33 +/- 0.58 ms; Node-RED 2006.67 +/- 0.58 ms.

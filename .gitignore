@@ -4,6 +4,7 @@
 *.blg
 *.log
 *.out
+!demo/comparison/results/**/*.out
 *.synctex.gz
 texput.log
 
@@ -12,3 +13,11 @@ texput.log
 
 # Go build artifacts
 sensor-sim/sensor-sim
+
+# Local benchmark dependencies and runtime state
+demo/comparison/nodered/node_modules/
+demo/comparison/nodered/.config.*.json
+demo/comparison/nodered/.config.nodes.json.backup
+demo/comparison/nodered/.flows.json.backup
+demo/comparison/nodered/.sessions.json
+__pycache__/

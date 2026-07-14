@@ -100,6 +100,23 @@ Results are written to a timestamped directory under `demo/results/`. The live
 API phase is useful ecological validation but is not deterministic; controlled
 comparisons should use the fixed-seed synthetic phase.
 
+### Controlled Node-RED comparison
+
+The publication comparison runs Nephtys and an equivalent pinned Node-RED flow
+against exact 12,000-event simulator sequences. It records normalized NATS
+output, CPU, RSS, complete-stack RSS, throughput, and p50/p95 latency:
+
+```powershell
+pwsh ./demo/comparison/run-comparison.ps1
+```
+
+The script requires Docker Desktop, Node.js 24.16.0, Python, Go, and a detached
+Nephtys worktree at `C:\dev\Nephtys-uic-benchmark` pinned to commit `c146ee7`.
+It builds all local binaries, installs the lockfile-pinned Node-RED environment,
+retains invalid attempts, and refuses to summarize paired runs whose accepted
+event sequences differ. See `demo/comparison/README.md` for boundaries and
+semantic limitations.
+
 ### 5. (Optional) Live dashboard
 
 Import `demo/grafana-dashboard.json` into Grafana at `http://localhost:3000`
