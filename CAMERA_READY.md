@@ -139,3 +139,10 @@ The submitted manuscript contains the following claims that require correction o
 - Tool-plus-NATS RSS mean: Nephtys 27.15 +/- 0.09 MB; Node-RED 117.31 +/- 0.36 MB.
 - CPU mean (100% = one logical CPU): Nephtys 0.03 +/- 0.02%; Node-RED 0.31 +/- 0.08%.
 - Latency p95: Nephtys 2004.33 +/- 0.58 ms; Node-RED 2006.67 +/- 0.58 ms.
+
+## Optional Raspberry Pi follow-up
+
+- Protocol and minimum purchase list: `RASPBERRY_PI_BENCHMARK.md`
+- Orchestrator: `demo/comparison/run-pi-comparison.ps1`
+- Status: infrastructure prepared; device measurements and any paper update are
+  intentionally blocked until the physical Pi and wall meter are available.

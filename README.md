@@ -117,6 +117,14 @@ retains invalid attempts, and refuses to summarize paired runs whose accepted
 event sequences differ. See `demo/comparison/README.md` for boundaries and
 semantic limitations.
 
+### Optional Raspberry Pi 5 validation
+
+The native ARM64 follow-up keeps the simulator and collector on the Windows
+host while running each tool and NATS on a Raspberry Pi 5. Hardware, setup,
+power-meter requirements, commands, and validity gates are documented in
+[`RASPBERRY_PI_BENCHMARK.md`](RASPBERRY_PI_BENCHMARK.md). No Pi result is
+claimed until the physical-device golden and smoke tests pass.
+
 ### 5. (Optional) Live dashboard
 
 Import `demo/grafana-dashboard.json` into Grafana at `http://localhost:3000`
