@@ -1,0 +1,249 @@
+<title>Nephtys su Raspberry Pi 5 — Potenza vs Throughput</title>
+<style>
+  :root {
+    --bg: #eef1f4;
+    --card: #ffffff;
+    --ink: #191f27;
+    --muted: #59636f;
+    --faint: #8b97a3;
+    --grid: #e1e6eb;
+    --line: #d3dae1;
+    --power: #b8620a;      /* ambra — potenza */
+    --energy: #0d7a74;     /* teal — energia/evento */
+    --ref: #9aa6b2;        /* riferimento idle */
+    --good: #2f8a4d;       /* zero perdite */
+    --shadow: 0 1px 2px rgba(20,30,40,.06), 0 6px 24px rgba(20,30,40,.06);
+    --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1116; --card: #161c23; --ink: #e7ecf1; --muted: #94a0ac;
+      --faint: #6b7580; --grid: #232c35; --line: #2c3742;
+      --power: #f0a53a; --energy: #3fb8b0; --ref: #6b7580; --good: #57c07a;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1116; --card: #161c23; --ink: #e7ecf1; --muted: #94a0ac;
+    --faint: #6b7580; --grid: #232c35; --line: #2c3742;
+    --power: #f0a53a; --energy: #3fb8b0; --ref: #6b7580; --good: #57c07a;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 30px rgba(0,0,0,.35);
+  }
+  :root[data-theme="light"] {
+    --bg: #eef1f4; --card: #ffffff; --ink: #191f27; --muted: #59636f;
+    --faint: #8b97a3; --grid: #e1e6eb; --line: #d3dae1;
+    --power: #b8620a; --energy: #0d7a74; --ref: #9aa6b2; --good: #2f8a4d;
+    --shadow: 0 1px 2px rgba(20,30,40,.06), 0 6px 24px rgba(20,30,40,.06);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans); line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: clamp(20px, 4vw, 52px) clamp(16px, 4vw, 40px) 64px; }
+
+  header { margin-bottom: 32px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--power); margin: 0 0 10px;
+  }
+  h1 {
+    font-size: clamp(24px, 4vw, 36px); line-height: 1.12; margin: 0 0 12px;
+    text-wrap: balance; letter-spacing: -.02em; font-weight: 650;
+  }
+  .sub { color: var(--muted); max-width: 62ch; margin: 0; font-size: 15.5px; }
+  .sub b { color: var(--ink); font-weight: 600; }
+
+  /* KPI row */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 28px 0 36px; }
+  @media (max-width: 640px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi {
+    background: var(--card); border-radius: 12px; padding: 16px 16px 14px;
+    box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 2px;
+  }
+  .kpi .v { font-family: var(--mono); font-size: clamp(22px, 3.4vw, 28px); font-weight: 600; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+  .kpi .u { font-size: 12.5px; color: var(--faint); font-family: var(--mono); }
+  .kpi .l { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+  .kpi.hl .v { color: var(--power); }
+  .kpi.ok .v { color: var(--good); }
+
+  .card {
+    background: var(--card); border-radius: 14px; padding: 24px clamp(16px,3vw,28px) 20px;
+    box-shadow: var(--shadow); margin-bottom: 22px;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 2px; font-weight: 620; letter-spacing: -.01em; }
+  .card .cap { color: var(--muted); font-size: 13.5px; margin: 0 0 16px; max-width: 64ch; }
+  .chart-scroll { overflow-x: auto; }
+  svg { display: block; width: 100%; height: auto; min-width: 480px; }
+
+  .axis-t { font-family: var(--mono); font-size: 12px; fill: var(--faint); }
+  .axis-l { font-family: var(--sans); font-size: 12px; fill: var(--muted); }
+  .grid-line { stroke: var(--grid); stroke-width: 1; }
+  .zero-line { stroke: var(--line); stroke-width: 1.5; }
+  .ref-line { stroke: var(--ref); stroke-width: 1.5; stroke-dasharray: 4 4; }
+  .ref-t { font-family: var(--mono); font-size: 11.5px; fill: var(--ref); }
+  .val-t { font-family: var(--mono); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  .tbl-scroll { overflow-x: auto; }
+  th, td { text-align: right; padding: 9px 12px; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); font-weight: 600; border-bottom: 1.5px solid var(--line); }
+  tbody td { font-family: var(--mono); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--grid); }
+  tbody th { font-family: var(--sans); font-weight: 600; border-bottom: 1px solid var(--grid); }
+  tbody tr.rest td, tbody tr.rest th { color: var(--muted); }
+  .chip { display: inline-block; font-family: var(--mono); font-size: 11px; padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good); font-weight: 600; }
+
+  .method { font-size: 13px; color: var(--muted); }
+  .method b { color: var(--ink); font-weight: 600; }
+  .method code { font-family: var(--mono); font-size: 12px; background: color-mix(in srgb, var(--ink) 7%, transparent); padding: 1px 5px; border-radius: 5px; }
+  footer { margin-top: 28px; font-size: 12px; color: var(--faint); font-family: var(--mono); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Misura a muro · Shelly Plug S MTR Gen3 · 2026-07-23</p>
+    <h1>Nephtys su Raspberry Pi 5: potenza contro throughput</h1>
+    <p class="sub">Uno stack completo — OS, broker NATS JetStream e connector — misurato alla presa su finestre da 20 minuti. A riposo il software è <b>energeticamente gratuito</b>; sotto carico la curva è <b>fortemente sublineare</b> e l'efficienza per evento migliora con il throughput.</p>
+  </header>
+
+  <section class="kpis">
+    <div class="kpi">
+      <span class="v">3.10<span class="u"> W</span></span>
+      <span class="l">Stack completo a riposo</span>
+    </div>
+    <div class="kpi hl">
+      <span class="v">1.3<span class="u"> mJ/ev</span></span>
+      <span class="l">Energia marginale a 1000 ev/s</span>
+    </div>
+    <div class="kpi ok">
+      <span class="v">0</span>
+      <span class="l">Eventi persi · ingeriti = pubblicati</span>
+    </div>
+    <div class="kpi">
+      <span class="v">0.21<span class="u"> ms</span></span>
+      <span class="l">Latenza ingest→publish a 1000 ev/s</span>
+    </div>
+  </section>
+
+  <div class="card">
+    <h2>Potenza a muro vs throughput</h2>
+    <p class="cap">Decuplicare il carico da 10 a 100 ev/s non muove il consumo; il costo è un termine fisso di attivazione (~0.6 W) più una componente marginale minima. Asse Y ristretto attorno alla baseline per evidenziare i delta.</p>
+    <div class="chart-scroll">
+      <svg viewBox="0 0 800 340" role="img" aria-label="Grafico della potenza a muro rispetto al throughput">
+        <!-- gridlines Y: 3.0, 3.5, 4.0, 4.5 W -->
+        <line class="grid-line" x1="70" y1="40" x2="760" y2="40"/>
+        <line class="grid-line" x1="70" y1="127" x2="760" y2="127"/>
+        <line class="grid-line" x1="70" y1="213" x2="760" y2="213"/>
+        <line class="zero-line" x1="70" y1="300" x2="760" y2="300"/>
+        <text class="axis-l" x="60" y="44" text-anchor="end">4.5</text>
+        <text class="axis-l" x="60" y="131" text-anchor="end">4.0</text>
+        <text class="axis-l" x="60" y="217" text-anchor="end">3.5</text>
+        <text class="axis-l" x="60" y="304" text-anchor="end">3.0</text>
+        <text class="axis-l" x="20" y="175" text-anchor="middle" transform="rotate(-90 20 175)">Potenza (W)</text>
+
+        <!-- idle reference -->
+        <line class="ref-line" x1="70" y1="283" x2="760" y2="283"/>
+        <text class="ref-t" x="756" y="278" text-anchor="end">riposo 3.10 W (OS + NATS + Nephtys)</text>
+
+        <!-- X ticks: 10, 100, 1000 (log) -->
+        <text class="axis-t" x="150" y="322" text-anchor="middle">10</text>
+        <text class="axis-t" x="415" y="322" text-anchor="middle">100</text>
+        <text class="axis-t" x="680" y="322" text-anchor="middle">1000</text>
+        <text class="axis-t" x="415" y="338" text-anchor="middle" fill="var(--muted)">eventi / secondo  (scala log)</text>
+
+        <!-- curve -->
+        <polyline points="150,176 415,176 680,68" fill="none" stroke="var(--power)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <!-- markers + labels -->
+        <g>
+          <circle cx="150" cy="176" r="5.5" fill="var(--power)" stroke="var(--card)" stroke-width="2"><title>10 ev/s → 3.714 W</title></circle>
+          <text class="val-t" x="150" y="164" text-anchor="middle" fill="var(--power)">3.71</text>
+        </g>
+        <g>
+          <circle cx="415" cy="176" r="5.5" fill="var(--power)" stroke="var(--card)" stroke-width="2"><title>100 ev/s → 3.717 W</title></circle>
+          <text class="val-t" x="415" y="164" text-anchor="middle" fill="var(--power)">3.72</text>
+        </g>
+        <g>
+          <circle cx="680" cy="68" r="5.5" fill="var(--power)" stroke="var(--card)" stroke-width="2"><title>1000 ev/s → 4.338 W</title></circle>
+          <text class="val-t" x="680" y="56" text-anchor="middle" fill="var(--power)">4.34</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Energia per evento vs throughput</h2>
+    <p class="cap">Il rovescio della medaglia: il costo fisso di attivazione, diluito su più eventi, fa crollare l'energia marginale per evento di ~50× salendo di carico. Asse Y logaritmico.</p>
+    <div class="chart-scroll">
+      <svg viewBox="0 0 800 340" role="img" aria-label="Grafico dell'energia per evento rispetto al throughput">
+        <!-- gridlines log Y: 100, 10, 1 mJ -->
+        <line class="grid-line" x1="70" y1="40" x2="760" y2="40"/>
+        <line class="grid-line" x1="70" y1="170" x2="760" y2="170"/>
+        <line class="zero-line" x1="70" y1="300" x2="760" y2="300"/>
+        <text class="axis-l" x="60" y="44" text-anchor="end">100</text>
+        <text class="axis-l" x="60" y="174" text-anchor="end">10</text>
+        <text class="axis-l" x="60" y="304" text-anchor="end">1</text>
+        <text class="axis-l" x="20" y="175" text-anchor="middle" transform="rotate(-90 20 175)">mJ / evento</text>
+
+        <!-- X ticks -->
+        <text class="axis-t" x="150" y="322" text-anchor="middle">10</text>
+        <text class="axis-t" x="415" y="322" text-anchor="middle">100</text>
+        <text class="axis-t" x="680" y="322" text-anchor="middle">1000</text>
+        <text class="axis-t" x="415" y="338" text-anchor="middle" fill="var(--muted)">eventi / secondo  (scala log)</text>
+
+        <!-- curve descending -->
+        <polyline points="150,65 415,196 680,285" fill="none" stroke="var(--energy)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <g>
+          <circle cx="150" cy="65" r="5.5" fill="var(--energy)" stroke="var(--card)" stroke-width="2"><title>10 ev/s → 64 mJ/evento</title></circle>
+          <text class="val-t" x="150" y="53" text-anchor="middle" fill="var(--energy)">64</text>
+        </g>
+        <g>
+          <circle cx="415" cy="196" r="5.5" fill="var(--energy)" stroke="var(--card)" stroke-width="2"><title>100 ev/s → 6.3 mJ/evento</title></circle>
+          <text class="val-t" x="415" y="184" text-anchor="middle" fill="var(--energy)">6.3</text>
+        </g>
+        <g>
+          <circle cx="680" cy="285" r="5.5" fill="var(--energy)" stroke="var(--card)" stroke-width="2"><title>1000 ev/s → 1.3 mJ/evento</title></circle>
+          <text class="val-t" x="680" y="273" text-anchor="middle" fill="var(--energy)">1.3</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Dati completi</h2>
+    <p class="cap">Potenza col metodo dell'energia integrata (primario); i due metodi indipendenti concordano entro 0.5–4.6%.</p>
+    <div class="tbl-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Livello</th><th>Carico</th><th>Potenza</th><th>Δ riposo</th>
+            <th>mJ/ev</th><th>Latenza</th><th>Eventi</th><th>Integrità</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="rest"><th>L0 · solo OS</th><td>riposo</td><td>3.096 W</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+          <tr class="rest"><th>L1 · + NATS</th><td>riposo</td><td>3.099 W</td><td>+0.003</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+          <tr class="rest"><th>L2 · + Nephtys</th><td>riposo</td><td>3.096 W</td><td>0.000</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+          <tr><th>L3 · basso</th><td>10 ev/s</td><td>3.714 W</td><td>+0.62</td><td>64</td><td>0.41 ms</td><td>11.9 K</td><td><span class="chip">0 persi</span></td></tr>
+          <tr><th>L3 · medio</th><td>100 ev/s</td><td>3.717 W</td><td>+0.62</td><td>6.3</td><td>0.24 ms</td><td>119 K</td><td><span class="chip">0 persi</span></td></tr>
+          <tr><th>L3 · alto</th><td>1000 ev/s</td><td>4.338 W</td><td>+1.24</td><td>1.3</td><td>0.21 ms</td><td>1.19 M</td><td><span class="chip">0 persi</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Metodo</h2>
+    <p class="method">
+      <b>Strumento:</b> Shelly Plug S MTR Gen3 (misura di rete a monte dell'alimentatore, perdite del PSU incluse). <b>Campionamento:</b> interrogata dal PC, mai dal Pi, per non perturbare il dispositivo sotto misura. <b>Finestre:</b> 20 min per livello, ~470 campioni ciascuna. <b>Doppio metodo:</b> energia integrata (<code>aenergy</code>, primario) e campioni istantanei di potenza (controllo di dispersione), concordi entro 0.5–4.6%. <b>Carico:</b> generatore SSE su PC a rate esatto; pipeline Nephtys vuota, quindi 1 evento = 1 publish su NATS. <b>Hardware:</b> Raspberry Pi 5, SSD USB, Wi-Fi; CPU 49–55 °C, nessun throttling.
+    </p>
+  </div>
+
+  <footer>
+    <span>Nephtys · connector edge real-time</span>
+    <span>IEEE UIC 2026 · dati preliminari</span>
+  </footer>
+</div>
