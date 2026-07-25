@@ -1,0 +1,23 @@
+14 Jul 15:45:57 - [info]
+
+Welcome to Node-RED
+===================
+
+14 Jul 15:45:57 - [info] Node-RED version: v5.0.1
+14 Jul 15:45:57 - [info] Node.js  version: v24.16.0
+14 Jul 15:45:57 - [info] Windows_NT 10.0.26200 x64 LE
+14 Jul 15:45:57 - [info] Loading palette nodes
+14 Jul 15:45:58 - [info] Settings file  : C:\dev\uic2026-nephtys\demo\comparison\nodered\settings.js
+14 Jul 15:45:58 - [info] Context store  : 'default' [module=memory]
+14 Jul 15:45:58 - [info] User directory : C:\dev\uic2026-nephtys\demo\comparison\nodered
+14 Jul 15:45:58 - [warn] Projects disabled : editorTheme.projects.enabled=false
+14 Jul 15:45:58 - [info] Flows file     : C:\dev\uic2026-nephtys\demo\comparison\nodered\flows.json
+14 Jul 15:45:58 - [warn] Using unencrypted credentials
+14 Jul 15:45:58 - [info] Server now running at http://127.0.0.1:1880/
+14 Jul 15:45:58 - [info] Starting flows
+14 Jul 15:45:58 - [info] Started flows
+14 Jul 15:46:35 - [info] Stopping flows
+14 Jul 15:46:35 - [info] Stopped flows
+14 Jul 15:46:35 - [info] Updated flows
+14 Jul 15:46:35 - [info] Starting flows
+14 Jul 15:46:35 - [info] Started flows

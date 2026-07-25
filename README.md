@@ -63,11 +63,12 @@ Nephtys listens on `http://localhost:3002` by default.
 
 ```bash
 cd sensor-sim/
-go run main.go -stations 20 -interval 500 -dup-ratio 0.3 -port 9091
+go run main.go -stations 20 -interval 500 -dup-ratio 0.3 -seed 2646958770 -port 9091
 ```
 
 This launches 20 virtual air-quality stations emitting at 2 Hz with a 30%
-duplicate ratio, matching the paper's experimental setup.
+duplicate ratio and a deterministic random seed, matching the paper's
+experimental setup and making repeated synthetic trials comparable.
 
 ### 4. Run the benchmark
 
@@ -86,6 +87,43 @@ The script runs three phases:
 
 At the end it prints bandwidth reduction, message-count reduction, per-middleware
 drop breakdown, and RSS memory -- the numbers reported in Table I of the paper.
+
+For the camera-ready repeated-trial protocol, retain raw counters and logs from
+three complete trials:
+
+```bash
+cd demo/
+bash ./run-repeated-benchmarks.sh 3 300 1800
+```
+
+Results are written to a timestamped directory under `demo/results/`. The live
+API phase is useful ecological validation but is not deterministic; controlled
+comparisons should use the fixed-seed synthetic phase.
+
+### Controlled Node-RED comparison
+
+The publication comparison runs Nephtys and an equivalent pinned Node-RED flow
+against exact 12,000-event simulator sequences. It records normalized NATS
+output, CPU, RSS, complete-stack RSS, throughput, and p50/p95 latency:
+
+```powershell
+pwsh ./demo/comparison/run-comparison.ps1
+```
+
+The script requires Docker Desktop, Node.js 24.16.0, Python, Go, and a detached
+Nephtys worktree at `C:\dev\Nephtys-uic-benchmark` pinned to commit `c146ee7`.
+It builds all local binaries, installs the lockfile-pinned Node-RED environment,
+retains invalid attempts, and refuses to summarize paired runs whose accepted
+event sequences differ. See `demo/comparison/README.md` for boundaries and
+semantic limitations.
+
+### Optional Raspberry Pi 5 validation
+
+The native ARM64 follow-up keeps the simulator and collector on the Windows
+host while running each tool and NATS on a Raspberry Pi 5. Hardware, setup,
+power-meter requirements, commands, and validity gates are documented in
+[`RASPBERRY_PI_BENCHMARK.md`](RASPBERRY_PI_BENCHMARK.md). No Pi result is
+claimed until the physical-device golden and smoke tests pass.
 
 ### 5. (Optional) Live dashboard
 

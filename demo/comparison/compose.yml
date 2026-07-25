@@ -1,0 +1,13 @@
+services:
+  nats-comparison:
+    image: nats:2.14.3
+    container_name: nephtys_comparison_nats
+    ports:
+      - "4322:4222"
+      - "8322:8222"
+    command: ["--jetstream", "--store_dir", "/tmp/nats", "-m", "8222"]
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8222/healthz"]
+      interval: 2s
+      timeout: 2s
+      retries: 15

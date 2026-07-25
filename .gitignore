@@ -4,6 +4,7 @@
 *.blg
 *.log
 *.out
+!demo/comparison/results/**/*.out
 *.synctex.gz
 texput.log
 
@@ -12,3 +13,15 @@ texput.log
 
 # Go build artifacts
 sensor-sim/sensor-sim
+
+# Local benchmark dependencies and runtime state
+demo/comparison/nodered/node_modules/
+# The Pi orchestrator copies each slot's whole run directory back for its logs, which
+# drags along the JetStream data store (~1 MB per Nephtys slot). The logs are evidence;
+# the message blocks are runtime state.
+demo/comparison/results/**/*.remote/jetstream/
+demo/comparison/nodered/.config.*.json
+demo/comparison/nodered/.config.nodes.json.backup
+demo/comparison/nodered/.flows.json.backup
+demo/comparison/nodered/.sessions.json
+__pycache__/

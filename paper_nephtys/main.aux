@@ -3,10 +3,11 @@
 \providecommand\HyField@AuxAddToFields[1]{}
 \providecommand\HyField@AuxAddToCoFields[2]{}
 \citation{zanella2014iot}
-\citation{kafka2011}
 \citation{shi2016edge}
-\citation{mqtt2019}
 \citation{assuncao2018stream}
+\citation{mqtt2019}
+\citation{nodered2026}
+\citation{redpandaconnect2026}
 \citation{go2026}
 \citation{nats2026}
 \citation{shi2016edge}
@@ -19,43 +20,43 @@
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Nephtys system architecture. Sensor data flows left-to-right through protocol connectors and a composable middleware pipeline before publication to NATS JetStream. The REST API enables runtime hot-swapping of pipeline configurations.}}{2}{figure.1}\protected@file@percent }
 \newlabel{fig:arch}{{1}{2}{Nephtys system architecture. Sensor data flows left-to-right through protocol connectors and a composable middleware pipeline before publication to NATS JetStream. The REST API enables runtime hot-swapping of pipeline configurations}{figure.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}Fault-Tolerant Ingestion}{2}{subsection.2.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Zero-Infrastructure Persistence}{2}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Database-Free Configuration Persistence}{2}{subsection.2.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-C}}Edge Pipeline for Bandwidth Reduction}{2}{subsection.2.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {III}Evaluation Scenario}{2}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Experimental Setup}{2}{subsection.3.1}\protected@file@percent }
 \citation{openmeteo2026}
 \citation{sensorcommunity2026}
 \citation{openmeteo2026}
 \citation{sensorcommunity2026}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Results}{3}{subsection.3.2}\protected@file@percent }
+\newlabel{sec:results}{{\mbox  {III-B}}{3}{Results}{subsection.3.2}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Benchmark results over three trials (mean; $\pm $ sample SD).}}{3}{table.1}\protected@file@percent }
+\newlabel{tab:results}{{I}{3}{Benchmark results over three trials (mean; $\pm $ sample SD)}{table.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Controlled comparison on both platforms (mean $\pm $ sample SD; three trials each).}}{3}{table.2}\protected@file@percent }
+\newlabel{tab:controlled}{{II}{3}{Controlled comparison on both platforms (mean $\pm $ sample SD; three trials each)}{table.2}{}}
 \citation{edgex2026}
-\citation{kura2026}
 \citation{mqtt2019}
 \citation{nodered2026}
-\citation{go2026}
-\citation{nats2026}
-\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Benchmark results: baseline vs.\ full pipeline on synthetic and real-data streams.}}{3}{table.1}\protected@file@percent }
-\newlabel{tab:results}{{I}{3}{Benchmark results: baseline vs.\ full pipeline on synthetic and real-data streams}{table.1}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Experimental Setup}{3}{subsection.3.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Results}{3}{subsection.3.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Grafana dashboard during a mixed workload (synthetic + real-data streams), showing ingested vs.\ published rates, per-middleware drop breakdown, and instantaneous reduction gauges (65.7\% bandwidth, 98.6\% events at capture time; final aggregates in Table~\ref {tab:results}).}}{3}{figure.2}\protected@file@percent }
-\newlabel{fig:dashboard}{{2}{3}{Grafana dashboard during a mixed workload (synthetic + real-data streams), showing ingested vs.\ published rates, per-middleware drop breakdown, and instantaneous reduction gauges (65.7\% bandwidth, 98.6\% events at capture time; final aggregates in Table~\ref {tab:results})}{figure.2}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {IV}Related Work and Conclusions}{3}{section.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Related Work}{3}{subsection.4.1}\protected@file@percent }
+\citation{redpandaconnect2026}
 \citation{assuncao2018stream}
 \bibstyle{IEEEtran}
 \bibdata{references}
 \bibcite{zanella2014iot}{1}
-\bibcite{kafka2011}{2}
-\bibcite{shi2016edge}{3}
+\bibcite{shi2016edge}{2}
+\bibcite{assuncao2018stream}{3}
 \bibcite{mqtt2019}{4}
-\bibcite{assuncao2018stream}{5}
-\bibcite{go2026}{6}
-\bibcite{nats2026}{7}
-\bibcite{fnv2019}{8}
-\bibcite{openmeteo2026}{9}
-\bibcite{sensorcommunity2026}{10}
-\bibcite{edgex2026}{11}
-\bibcite{kura2026}{12}
-\bibcite{nodered2026}{13}
+\bibcite{nodered2026}{5}
+\bibcite{redpandaconnect2026}{6}
+\bibcite{go2026}{7}
+\bibcite{nats2026}{8}
+\bibcite{fnv2019}{9}
+\bibcite{openmeteo2026}{10}
+\bibcite{sensorcommunity2026}{11}
+\bibcite{edgex2026}{12}
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Related Work and Conclusions}{4}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Related Work}{4}{subsection.4.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Conclusions}{4}{subsection.4.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Qualitative comparison of overlapping edge-ingestion tools.}}{4}{table.3}\protected@file@percent }
+\newlabel{tab:comparison}{{III}{4}{Qualitative comparison of overlapping edge-ingestion tools}{table.3}{}}
 \@writefile{toc}{\contentsline {section}{References}{4}{section*.1}\protected@file@percent }
 \gdef \@abspage@last{4}

@@ -1,0 +1,11 @@
+{
+  "name": "nephtys-nodered-comparison",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Pinned Node-RED environment for the Nephtys comparison benchmark",
+  "dependencies": {
+    "@nats-io/jetstream": "3.4.0",
+    "@nats-io/transport-node": "3.4.0",
+    "node-red": "5.0.1"
+  }
+}

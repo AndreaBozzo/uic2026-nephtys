@@ -26,15 +26,16 @@ A.~Zanella, N.~Bui, A.~Castellani, L.~Vangelista, and M.~Zorzi, ``Internet of
   things for smart cities,'' \emph{IEEE Internet of Things Journal}, vol.~1,
   no.~1, pp. 22--32, 2014.
 
-\bibitem{kafka2011}
-J.~Kreps, N.~Narkhede, and J.~Rao, ``Kafka: a distributed messaging system for
-  log processing,'' in \emph{Proceedings of the 6th International Workshop on
-  Networking Meets Databases (NetDB)}, Athens, Greece, 2011, pp. 1--7.
-
 \bibitem{shi2016edge}
 W.~Shi, J.~Cao, Q.~Zhang, Y.~Li, and L.~Xu, ``Edge computing: Vision and
   challenges,'' \emph{IEEE Internet of Things Journal}, vol.~3, no.~5, pp.
   637--646, 2016.
+
+\bibitem{assuncao2018stream}
+M.~D. de~Assun\c{c}\~{a}o, A.~da~Silva~Veith, and R.~Buyya, ``Distributed data
+  stream processing and edge computing: A survey on resource elasticity and
+  future directions,'' \emph{Journal of Network and Computer Applications},
+  vol. 103, pp. 1--17, 2018.
 
 \bibitem{mqtt2019}
 \BIBentryALTinterwordspacing
@@ -43,11 +44,14 @@ A.~Banks, E.~Briggs, K.~Borgendale, and R.~Gupta, ``{MQTT} version 5.0,''
   \url{https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html}
 \BIBentrySTDinterwordspacing
 
-\bibitem{assuncao2018stream}
-M.~D. de~Assun\c{c}\~{a}o, A.~da~Silva~Veith, and R.~Buyya, ``Distributed data
-  stream processing and edge computing: A survey on resource elasticity and
-  future directions,'' \emph{Journal of Network and Computer Applications},
-  vol. 103, pp. 1--17, 2018.
+\bibitem{nodered2026}
+{OpenJS Foundation}, ``{Node-RED} -- low-code programming for event-driven
+  applications,'' \url{https://nodered.org}, 2026, accessed: 2026-03-26.
+
+\bibitem{redpandaconnect2026}
+{Redpanda Data}, ``{Redpanda Connect} streams api,''
+  \url{https://docs.redpanda.com/connect/guides/streams_mode/streams_api/},
+  2026, accessed: 2026-07-13.
 
 \bibitem{go2026}
 {The Go Authors}, ``The {Go} programming language specification,''
@@ -74,14 +78,5 @@ P.~Zippenfenig, ``{Open-Meteo} -- free weather {API},''
 \bibitem{edgex2026}
 {LF Edge}, ``{EdgeX Foundry} -- open-source edge computing platform for
   {IoT},'' \url{https://www.edgexfoundry.org}, 2026, accessed: 2026-03-26.
-
-\bibitem{kura2026}
-{Eclipse Foundation}, ``Eclipse {Kura} -- the extensible open source
-  {Java/OSGi} {IoT} edge framework,'' \url{https://eclipse.dev/kura/}, 2026,
-  accessed: 2026-03-26.
-
-\bibitem{nodered2026}
-{OpenJS Foundation}, ``{Node-RED} -- low-code programming for event-driven
-  applications,'' \url{https://nodered.org}, 2026, accessed: 2026-03-26.
 
 \end{thebibliography}

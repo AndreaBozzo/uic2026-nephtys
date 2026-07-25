@@ -1,0 +1,23 @@
+25 Jul 10:28:20 - [info] 
+
+Welcome to Node-RED
+===================
+
+25 Jul 10:28:20 - [info] Node-RED version: v5.0.1
+25 Jul 10:28:20 - [info] Node.js  version: v24.16.0
+25 Jul 10:28:20 - [info] Linux 6.18.34+rpt-rpi-2712 arm64 LE
+25 Jul 10:28:20 - [info] Loading palette nodes
+25 Jul 10:28:20 - [info] Settings file  : /home/andrea/nephtys-pi-bench/nodered/settings.js
+25 Jul 10:28:20 - [info] Context store  : 'default' [module=memory]
+25 Jul 10:28:20 - [info] User directory : /home/andrea/nephtys-pi-bench/nodered
+25 Jul 10:28:20 - [warn] Projects disabled : editorTheme.projects.enabled=false
+25 Jul 10:28:20 - [info] Flows file     : /home/andrea/nephtys-pi-bench/nodered/flows.json
+25 Jul 10:28:20 - [warn] Using unencrypted credentials
+25 Jul 10:28:21 - [info] Server now running at http://127.0.0.1:1880/
+25 Jul 10:28:21 - [info] Starting flows
+25 Jul 10:28:21 - [info] Started flows
+25 Jul 10:28:57 - [info] Stopping flows
+25 Jul 10:28:57 - [info] Stopped flows
+25 Jul 10:28:57 - [info] Updated flows
+25 Jul 10:28:57 - [info] Starting flows
+25 Jul 10:28:57 - [info] Started flows

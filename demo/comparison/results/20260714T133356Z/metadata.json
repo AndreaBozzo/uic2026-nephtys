@@ -1,0 +1,18 @@
+{
+  "timestamp_utc": "2026-07-14T13:34:17.4066137Z",
+  "nephtys_commit": "c146ee7c397fd415194635b0e872d30f3cc87c0a",
+  "node": "v24.16.0",
+  "node_red": "5.0.1",
+  "nats_transport": "3.4.0",
+  "nats_jetstream": "3.4.0",
+  "nats_server": "2.14.3",
+  "events": 12000,
+  "warmup_events": 1200,
+  "interval_ms": 500,
+  "stations": 20,
+  "duplicate_ratio": 0.3,
+  "seed": 2646958770,
+  "cpu_definition": "100 percent equals one logical CPU",
+  "rss_definition": "Windows WorkingSet64 for tool; Docker stats for NATS",
+  "threshold_semantics": "global previous output at pinned Nephtys commit; Node-RED RBE deadbandEq with separate topics disabled"
+}
