@@ -33,7 +33,7 @@
 \maketitle
 
 \begin{abstract}
-Smart City sensor networks generate continuous telemetry that must be ingested, filtered, and forwarded by resource-conscious edge gateways. Existing tools span forwarding-oriented brokers and broader integration or stream-processing platforms, leaving different trade-offs in processing scope, reconfiguration semantics, and deployment footprint. We present \textbf{Nephtys}, a Go-based edge connector that ingests heterogeneous real-time sources (WebSocket, REST, SSE, webhooks, and gRPC) through hot-swappable per-stream middleware pipelines. NATS JetStream provides transport, event durability, and configuration storage without a separate application database. Three trials with 20 simulated stations reduced bytes by 67.30\% and messages by 98.71\%; five live feeds showed 88.96\,$\pm$\,0.34\% byte reduction. Against an equivalent Node-RED flow on identical event sequences, both systems produced identical reductions and near-identical latency, while Nephtys used 19.14\,$\pm$\,0.07\,MB versus 109.60\,$\pm$\,0.40\,MB tool RSS.
+Smart City sensor networks generate continuous telemetry that must be ingested, filtered, and forwarded by resource-conscious edge gateways. Existing tools span forwarding-oriented brokers and broader integration or stream-processing platforms, leaving different trade-offs in processing scope, reconfiguration semantics, and deployment footprint. We present \textbf{Nephtys}, a Go-based edge connector that ingests heterogeneous real-time sources (WebSocket, REST, SSE, webhooks, and gRPC) through hot-swappable per-stream middleware pipelines. NATS JetStream provides transport, event durability, and configuration storage without a separate application database. Three trials with 20 simulated stations reduced bytes by 67.30\% and messages by 98.71\%; five live feeds showed 88.96\,$\pm$\,0.34\% byte reduction. Against an equivalent Node-RED flow on identical event sequences, both systems produced identical reductions and near-identical latency, while Nephtys used 19.14\,$\pm$\,0.07\,MB versus 109.60\,$\pm$\,0.40\,MB tool RSS. On a Raspberry~Pi~5 the same protocol reproduced these reductions and a 6.59$\times$ memory advantage, though wall power was indistinguishable at ${\approx}3.6$\,W, the platform's idle floor dominating this workload.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -78,17 +78,17 @@ The pull-based WebSocket and SSE connectors reconnect with \textbf{exponential b
 
 To avoid operating a separate application database, Nephtys uses \textbf{NATS JetStream}~\cite{nats2026} as both event transport and configuration store. Published sensor events are retained in a durable JetStream stream (72 hours by default). Initial stream registrations are serialized in a JetStream Key-Value bucket (\texttt{nephtys\_streams}); on startup, the Stream Manager reads these entries and re-registers their connectors and pipelines. Pipeline changes made through the hot-swap endpoint are intentionally transient in the evaluated version and revert to the registered configuration after restart.
 
-This design keeps the required application stack to Nephtys and NATS; Prometheus and Grafana are optional evaluation tools. Outbound WebSocket and HTTP-based connectors accept TLS-protected endpoints, and the management REST API supports Bearer-token authorization. Actual single-board-computer measurements remain future validation rather than an assumption of the present experiment.
+This design keeps the required application stack to Nephtys and NATS; Prometheus and Grafana are optional evaluation tools. Outbound WebSocket and HTTP-based connectors accept TLS-protected endpoints, and the management REST API supports Bearer-token authorization. Single-board-computer behavior is measured directly on a Raspberry~Pi~5 in Section~\ref{sec:results} rather than assumed.
 
 \subsection{Edge Pipeline for Bandwidth Reduction}
 
 The central component is the \textbf{Pipeline Middleware} engine. Before an event reaches the broker, it traverses a chain of composable middleware stages, each independently configurable per stream:
 
 \begin{itemize}
-  \item \textbf{Transform}: Extracts only the relevant fields from nested JSON payloads using dot-notation path mapping, reducing per-event payload size.
+  \item \textbf{Transform}: Extracts relevant fields from nested JSON via dot-notation path mapping, reducing payload size.
   \item \textbf{Dedup}: Computes the FNV-64a hash~\cite{fnv2019} of each payload and blocks duplicates within a configurable time-to-live window.
-  \item \textbf{Threshold}: Passes an event only if the absolute change in a numerical field exceeds a configurable delta (e.g., $\Delta\mathrm{PM}_{2.5} \geq 1.0\;\mu\mathrm{g/m^3}$), filtering out sensor noise.
-  \item \textbf{Batch}: Buffers events and flushes them as a single aggregated message at a configurable interval or batch size, reducing per-message overhead.
+  \item \textbf{Threshold}: Passes an event only if a numerical field changes by more than a configurable delta (e.g., $\Delta\mathrm{PM}_{2.5} \geq 1.0\;\mu\mathrm{g/m^3}$), filtering sensor noise.
+  \item \textbf{Batch}: Buffers events and flushes them as one aggregated message at a configurable interval or size, cutting per-message overhead.
   \item \textbf{Filter} and \textbf{Enrich}: Drop events not matching specified types, or inject static metadata tags.
 \end{itemize}
 
@@ -110,7 +110,10 @@ Nephtys runs natively on Windows~11 (Intel Core Ultra~7 258V, 32\,GB RAM); NATS 
 
 The full middleware pipeline is configured as: Transform (5 fields extracted), Dedup (TTL\,=\,30\,s, cache\,=\,500), Threshold (path\,=\,\texttt{pm25}, $\delta$\,=\,1.0\,$\mu$g/m$^3$), Batch (size\,=\,50, flush\,=\,5\,s). A controlled comparison uses Node-RED~5.0.1 natively on the same host with core WebSocket, JSON, Change, RBE, and Join nodes plus a thin NATS JavaScript client wrapper. Its immediate RBE and global deadband match the observed semantics of the pinned Nephtys revision for this workload. A neutral subscriber verifies the timestamp-independent retained-event sequence and measures normalized output bytes and generation-to-publication latency. Tool RSS is Windows working set; CPU is normalized so 100\% denotes one logical CPU. Each system processes the same 12,000-event sequence after a discarded 1,200-event warm-up, in interleaved order over three trials.
 
+\textbf{Edge-hardware platform.} The identical protocol is repeated on a Raspberry~Pi~5 (4\,GB, active cooler, default governor, no overclock) running both tools and NATS natively on 64-bit Raspberry~Pi~OS, with the simulator and collector on a separate wired host. RSS and CPU come from \texttt{/proc}; wall power is measured at the mains socket, so it covers the whole board and its official supply, with no idle baseline subtracted. As the meter accumulates energy in 0.206\,Wh blocks, energy integrates its instantaneous power reading at ${\sim}1.4$\,s intervals, agreeing with the meter's own register within one block over the session.
+
 \subsection{Results}
+\label{sec:results}
 
 Table~\ref{tab:results} reports three trials of two experiments: (a)~a 5-minute synthetic workload with 20 virtual stations at 2\,Hz (${\sim}40$ events/s, 30\% duplicate ratio), and (b)~a 30-minute live workload with five REST poller streams hitting the Open-Meteo~\cite{openmeteo2026} and Sensor.Community~\cite{sensorcommunity2026} APIs. The simulator uses a fixed seed. Each table value is the arithmetic mean; reduction ratios and RSS additionally show sample standard deviation. Live inputs vary with the upstream APIs.
 
@@ -135,32 +138,39 @@ Table~\ref{tab:results} reports three trials of two experiments: (a)~a 5-minute 
 
 \textbf{Synthetic workload.} Each controlled trial ingested exactly 12,000 events; 7,733 survived Dedup and Threshold and were compacted into 155 batches. Transform and filtering reduced published bytes by 67.30\% and message count by 98.71\%. The retained-event sequence was identical across systems in every paired trial.
 
-\textbf{Real-data workload.} Across the five live API streams, each 30-minute trial ingested 270 events on average; Dedup dropped 158 and Threshold 92, leaving 20 published messages. Transform and filtering jointly reduced bytes by 88.96\% and message count by 92.71\%. One trial experienced a Sensor.Community connection reset and recovered at the next poll, illustrating live-input variability.
+\textbf{Real-data workload.} Across the five live streams, each 30-minute trial ingested 270 events on average; Dedup dropped 158 and Threshold 92, leaving 20 published messages, reducing bytes by 88.96\% and messages by 92.71\%. One trial saw a Sensor.Community connection reset that recovered at the next poll, illustrating live-input variability.
 
-\textbf{Resilience.} When the sensor simulator process is killed, the WebSocket connector detects the disconnection and enters exponential backoff (1\,s, 2\,s, 4\,s, \ldots, capped at 30\,s). After the simulator is restarted, Nephtys reconnects automatically within 1--2\,s. No crash or manual intervention is required; ingestion simply pauses and resumes.
+\textbf{Resilience.} When the simulator process is killed, the WebSocket connector detects the disconnection and enters exponential backoff (1\,s, 2\,s, 4\,s, \ldots, capped at 30\,s), then reconnects within 1--2\,s of the simulator restarting. Ingestion pauses and resumes with no crash or manual intervention.
 
-\textbf{Hot-reload latency.} Issuing a \texttt{PUT} request to change the threshold delta completes in under 16\,ms (including the full HTTP round-trip). The atomic pointer swap ensures the new pipeline takes effect on the very next event, with no loss or reordering.
+\textbf{Hot-reload latency.} A \texttt{PUT} changing the threshold delta completes in under 16\,ms including the HTTP round-trip, and the atomic pointer swap takes effect on the next event with no loss or reordering.
 
 \begin{table}[t]
   \centering
-  \caption{Controlled comparison (mean $\pm$ sample SD; three trials).}
+  \caption{Controlled comparison on both platforms (mean $\pm$ sample SD; three trials each).}
   \label{tab:controlled}
-  \begin{tabular}{@{}lrr@{}}
+  \resizebox{\columnwidth}{!}{%
+  \begin{tabular}{@{}lrrrr@{}}
     \toprule
-    \textbf{Metric} & \textbf{Nephtys} & \textbf{Node-RED} \\
+    & \multicolumn{2}{c}{\textbf{x86-64 host}} & \multicolumn{2}{c}{\textbf{Raspberry Pi 5}} \\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}
+    \textbf{Metric} & \textbf{Nephtys} & \textbf{Node-RED} & \textbf{Nephtys} & \textbf{Node-RED} \\
     \midrule
-    Byte reduction (\%) & 67.30$\pm$0.00 & 67.30$\pm$0.00 \\
-    Message reduction (\%) & 98.71$\pm$0.00 & 98.71$\pm$0.00 \\
-    Tool RSS (MB) & 19.14$\pm$0.07 & 109.60$\pm$0.40 \\
-    Tool + NATS RSS (MB) & 27.15$\pm$0.09 & 117.31$\pm$0.36 \\
-    CPU (\% of one core) & 0.03$\pm$0.02 & 0.31$\pm$0.08 \\
-    Latency p50 (ms) & 1004.33$\pm$0.58 & 1006.33$\pm$0.58 \\
-    Latency p95 (ms) & 2004.33$\pm$0.58 & 2006.67$\pm$0.58 \\
+    Byte reduction (\%) & 67.30$\pm$0.00 & 67.30$\pm$0.00 & 67.30$\pm$0.00 & 67.30$\pm$0.00 \\
+    Message reduction (\%) & 98.71$\pm$0.00 & 98.71$\pm$0.00 & 98.71$\pm$0.00 & 98.71$\pm$0.00 \\
+    Tool RSS (MB) & 19.14$\pm$0.07 & 109.60$\pm$0.40 & 19.51$\pm$0.07 & 128.47$\pm$0.44 \\
+    Tool + NATS RSS (MB) & 27.15$\pm$0.09 & 117.31$\pm$0.36 & 38.85$\pm$0.10 & 147.07$\pm$0.48 \\
+    CPU (\% of one core) & 0.03$\pm$0.02 & 0.31$\pm$0.08 & 0.32$\pm$0.00 & 0.72$\pm$0.01 \\
+    Latency p50 (ms) & 1004.33$\pm$0.58 & 1006.33$\pm$0.58 & 1006.00$\pm$0.00 & 1009.00$\pm$1.00 \\
+    Latency p95 (ms) & 2004.33$\pm$0.58 & 2006.67$\pm$0.58 & 2009.00$\pm$1.00 & 2013.00$\pm$1.00 \\
+    Wall power (W) & --- & --- & 3.610$\pm$0.005 & 3.584$\pm$0.014 \\
+    Energy per event (mJ) & --- & --- & 92.2$\pm$0.3 & 91.5$\pm$0.4 \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}}
 \end{table}
 
-Table~\ref{tab:controlled} shows that the equivalent flows have identical reduction and similar latency, dominated by batching. Nephtys uses 82.5\% less tool RSS and 76.9\% less complete-stack RSS than Node-RED under this configuration. CPU utilization is low for both at ${\sim}40$ events/s, so no saturation claim is made.
+Table~\ref{tab:controlled} shows that the equivalent flows have identical reduction and similar latency, dominated by batching. Nephtys uses 82.5\% less tool RSS and 76.9\% less complete-stack RSS on the host. CPU is low for both at ${\sim}40$ events/s, so no saturation claim is made.
+
+\textbf{Edge hardware.} On the Pi all six slots were valid on the first attempt, the SoC never throttled (\texttt{throttled=0x0} across 1,316 samples, 45--51\,$^\circ$C), and every slot reproduced the host's retained-event sequence hash and its 155 output batches, so the pipelines remain equivalent across architectures. The memory advantage widens to 6.59$\times$ tool RSS and 3.79$\times$ for the complete stack: Node-RED costs 17.2\% more resident memory on ARM64, while Nephtys is essentially unchanged at $+1.9\%$. Wall power, however, is \emph{indistinguishable}, at 3.610$\pm$0.005\,W against 3.584$\pm$0.014\,W --- a 0.70\% difference, of the opposite sign to the memory result and below one quantisation step of the meter's reading. The board draws ${\approx}3.0$\,W idle, so at 40~events/s the platform floor dominates and the footprint advantage does not become measurable energy savings. We therefore claim no energy advantage in either direction: on this hardware the smaller footprint buys headroom for co-located workloads, not power.
 
 % ================================================================
 \section{Related Work and Conclusions}
@@ -190,13 +200,13 @@ Table~\ref{tab:comparison} compares capabilities separately from the controlled 
 
 \subsection{Conclusions}
 
-This paper presented Nephtys, a lightweight edge connector that demonstrates how compiled languages and lightweight message brokers can enable bandwidth-efficient telemetry ingestion for Smart City sensor networks. By shifting deduplication, transformation, and threshold filtering to the edge through declaratively configurable middleware pipelines~\cite{assuncao2018stream}, the system reduced bytes by 67.30\% on the controlled synthetic workload and 88.96\% on the live workload. An equivalent Node-RED flow confirmed identical reduction and latency within 3\,ms, while Nephtys used 19.14\,MB mean tool RSS versus 109.60\,MB.
+This paper presented Nephtys, a lightweight edge connector that demonstrates how compiled languages and lightweight message brokers can enable bandwidth-efficient telemetry ingestion for Smart City sensor networks. By shifting deduplication, transformation, and threshold filtering to the edge through declaratively configurable middleware pipelines~\cite{assuncao2018stream}, the system reduced bytes by 67.30\% on the controlled synthetic workload and 88.96\% on the live workload. An equivalent Node-RED flow confirmed identical reduction and latency within 3\,ms, while Nephtys used 19.14\,MB mean tool RSS versus 109.60\,MB, and 19.51\,MB versus 128.47\,MB on a Raspberry~Pi~5. That run also bounds the benefit: wall power there was indistinguishable, so the advantage is memory headroom rather than energy.
 
 The runtime-reconfigurable pipeline allows operators to adapt filtering behavior (e.g., tightening thresholds during pollution alerts) without restarting the source connector. The contribution is the evaluated combination of this update boundary, heterogeneous acquisition, and reuse of the NATS durability layer---not a claim that runtime-reconfigurable stream processing is unique to Nephtys.
 
-Current limitations include only three trials, a 30-minute live-data window with changing upstream values, host-machine rather than single-board-computer measurements, one quantitative platform baseline, and a single-node deployment. The pinned revision applies threshold state globally rather than per station. The evaluated system also uses at-least-once delivery, and pipeline hot-swaps are not persisted across restart. These constraints limit statistical and platform-level generalization of the reported results.
+Current limitations include only three trials, a 30-minute live-data window with changing upstream values, one quantitative platform baseline, and a single-node deployment. The pinned revision applies threshold state globally rather than per station. The evaluated system also uses at-least-once delivery, and pipeline hot-swaps are not persisted across restart. The edge measurement covers a single load point on one board, and its power figures come from an uncalibrated consumer meter, so they characterize the platform rather than resolve small differences between tools. These constraints limit statistical and platform-level generalization of the reported results.
 
-Immediate future work is validation on edge hardware and broader controlled baselines. Longer-term work will investigate adaptive pipeline policies that trade information loss and processing latency against bandwidth and resource budgets, using multi-node sensor deployments only after the single-node operating envelope is characterized.
+Immediate future work is broader controlled baselines and an event-rate sweep on the edge board, since the point at which processing cost overtakes the idle power floor is precisely what a single load point cannot reveal. Longer-term work will investigate adaptive pipeline policies that trade information loss and processing latency against bandwidth and resource budgets, using multi-node sensor deployments only after the single-node operating envelope is characterized.
 
 % ================================================================
 \balance

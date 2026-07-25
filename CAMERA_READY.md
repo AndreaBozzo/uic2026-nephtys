@@ -9,6 +9,11 @@
 - Companion repository submission commit: `fac71735d16f5668b3261ea7e62034aed33e721e`
 - Submitted PDF: `paper_nephtys/main.pdf`
 - Submitted PDF SHA-256: `3480AB424A68044FC4CCFAB1492833C72F48E67609649FA6237BD03B980CF2C6`
+- Revised camera-ready PDF SHA-256 (2026-07-25, adds the Raspberry Pi 5 results):
+  `A021C10FCE34CF799E9F3325E324F1771B7329F0296DF7D84E8B648808ECF2B6`
+  Compiled with pdfTeX 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian):
+  4 pages, zero overfull boxes, zero undefined references or citations, all four pages
+  visually inspected.
 - Nephtys commit identified by the companion README: `14b548b59af784a682184505e9533165d6c84e75`
 - Evaluated Nephtys commit: `c146ee7c397fd415194635b0e872d30f3cc87c0a` (the earlier commit predates the runnable `cmd/nephtys` entry point)
 - Camera-ready working branch: `camera-ready-2026`
@@ -41,7 +46,7 @@ work, undertaken only if time remains and the comparison results justify it.
 | Direct comparison with established platforms is missing | Run an equivalent Node-RED flow against the identical controlled sequence | Three interleaved trials, neutral output collector, matched sequence hashes | Complete |
 | Evaluation uses a small deployment | State the limitation explicitly; add a stream-count/load sweep only if it fits the schedule | 20/50/100 stream or equivalent event-rate sweep | Planned, secondary |
 | Results come from a single run | Repeat each retained quantitative experiment at least three times | Mean and sample standard deviation from retained raw counters | Complete |
-| Actual edge hardware is not evaluated | Remove unsupported Raspberry Pi claims and disclose host-machine evaluation | Revised claims and limitations | Camera-ready draft complete; device run deferred |
+| Actual edge hardware is not evaluated | Run the identical controlled protocol on a Raspberry Pi 5, with wall-socket power | Three interleaved trials per system on the device, matched sequence hashes, no throttling | Complete |
 | Statistical performance analysis is limited | Report dispersion for the retained throughput, reduction, and RSS metrics | Raw per-run results retained in the companion repository | Complete for camera-ready scope |
 | Strong claims in introduction/conclusion | Replace "no solution" and "absent" wording; avoid unmeasured competitor RAM claims | Claim audit | Drafted |
 
@@ -107,7 +112,7 @@ The submitted manuscript contains the following claims that require correction o
 - [x] All absolute novelty claims removed or substantiated
 - [x] Related-work comparison table included
 - [x] Retained results repeated at least three times
-- [x] Unsupported edge-hardware language removed; device experiment deferred
+- [x] Edge-hardware experiment completed on a Raspberry Pi 5 and reported in the paper
 - [x] Controlled quantitative Node-RED comparison included
 - [x] Limitations include small scale, single node, delivery semantics, transient hot-swap state, and baseline scope
 - [x] Four-page limit checked; extra pages used only by explicit decision
@@ -140,9 +145,36 @@ The submitted manuscript contains the following claims that require correction o
 - CPU mean (100% = one logical CPU): Nephtys 0.03 +/- 0.02%; Node-RED 0.31 +/- 0.08%.
 - Latency p95: Nephtys 2004.33 +/- 0.58 ms; Node-RED 2006.67 +/- 0.58 ms.
 
-## Optional Raspberry Pi follow-up
+## Retained Raspberry Pi 5 comparison
 
-- Protocol and minimum purchase list: `RASPBERRY_PI_BENCHMARK.md`
-- Orchestrator: `demo/comparison/run-pi-comparison.ps1`
-- Status: infrastructure prepared; device measurements and any paper update are
-  intentionally blocked until the physical Pi and wall meter are available.
+- Protocol: `RASPBERRY_PI_BENCHMARK.md`; orchestrator `demo/comparison/run-pi-comparison.ps1`
+- Results: `demo/comparison/results/pi-20260725T075732Z/runs.csv`
+- Summary: `.../summary.md`; method, deviations, and gate record: `.../notes.md`
+- All six slots valid on attempt 1; no attempt retried or discarded.
+- All six slots share one retained-event sequence hash
+  (`d47a65d35398722d073ced6e8412210f2f81fd670dd9d3cc81e78385e5fc1b7a`) and identical
+  output volumes (155 batches, 7,733 retained events, 67.30% byte / 98.71% message
+  reduction), matching the x86-64 run exactly.
+- Device: Raspberry Pi 5 Model B Rev 1.1 (4 GB), Raspberry Pi OS reference 2026-06-18
+  (Debian 13 trixie, kernel 6.18.34+rpt-rpi-2712), `ondemand` governor, active cooler,
+  USB SSD root, wired Ethernet. `throttled=0x0` in all 1,316 samples, 45.0–51.0 °C.
+- Tool RSS mean: Nephtys 19.51 +/- 0.07 MB; Node-RED 128.47 +/- 0.44 MB (6.59x).
+- Tool-plus-NATS RSS mean: Nephtys 38.85 +/- 0.10 MB; Node-RED 147.07 +/- 0.48 MB.
+- CPU mean (100% = one logical CPU): Nephtys 0.32 +/- 0.00%; Node-RED 0.72 +/- 0.01%.
+- Latency p95: Nephtys 2009.00 +/- 1.00 ms; Node-RED 2013.00 +/- 1.00 ms.
+- Wall power mean: Nephtys 3.610 +/- 0.005 W; Node-RED 3.584 +/- 0.014 W.
+- **No energy claim is made in either direction.** Nephtys measured 0.70% *higher*, the
+  opposite sign to the memory result and below one quantisation step of the meter's
+  power reading. The board's ~3.0 W idle floor dominates a 40 event/s workload.
+- Summary arithmetic independently recomputed: 24/24 metrics matched `summary.json`.
+- Wall meter: Shelly Plug S MTR Gen3 (S3PL-30110EU), fw `1.8.99-plugmg3prod0`, no
+  calibration certificate. Its cumulative register flushes in 0.206 Wh blocks, so
+  energy is integrated from the instantaneous power reading on the orchestrator host;
+  the two agree within one block over the session (2.273 Wh vs 2.1165 Wh). See
+  `notes.md` for this and the four other recorded protocol deviations.
+
+## Deferred experiment: edge event-rate sweep
+
+The Pi run establishes a single load point. Because wall power there is dominated by the
+platform idle floor, the informative follow-up is an event-rate sweep on the device to
+locate where processing cost overtakes that floor. Stated as future work in the paper.
