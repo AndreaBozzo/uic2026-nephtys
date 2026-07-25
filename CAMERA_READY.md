@@ -107,8 +107,11 @@ The submitted manuscript contains the following claims that require correction o
 
 ## Camera-ready completion checklist
 
-- [ ] Official camera-ready instructions and registration link published and reviewed
-- [ ] Author metadata and final proceedings/conference name confirmed
+**Content is final as of 2026-07-25.** Every technical and editorial gate below is
+satisfied and independently verified; see "Status" immediately after this checklist. The
+remaining unchecked items are administrative decisions for the author, not outstanding
+work on the paper.
+
 - [x] All absolute novelty claims removed or substantiated
 - [x] Related-work comparison table included
 - [x] Retained results repeated at least three times
@@ -120,8 +123,32 @@ The submitted manuscript contains the following claims that require correction o
 - [x] Final PDF visually inspected
 - [x] Public artifact repository links resolve
 - [x] README citation updated from under review to accepted
-- [ ] At least one author registration completed when registration opens
-- [ ] In-person presenter and travel confirmed
+
+## Status: content complete, participation undecided
+
+The manuscript is done. `paper_nephtys/main.tex` needs no further edits: it compiles to
+exactly four pages with zero overfull boxes, zero undefined references or citations, and no
+LaTeX warnings, and all four pages have been visually inspected. The revised PDF's SHA-256
+is recorded at the top of this file, and the originally submitted PDF and its hash remain
+intact in history at `fac7173`.
+
+**Registration is undecided on cost grounds and may not happen.** The following are
+therefore deferred author decisions rather than pending tasks, and nothing in this
+repository assumes they occur:
+
+- Official camera-ready instructions and registration link reviewed
+- Author metadata and final proceedings/conference name confirmed
+- At least one author registration completed
+- In-person presenter and travel confirmed
+
+The durable, unconditional outcome is that the short paper was **peer-reviewed and
+accepted** at IEEE UIC 2026, and that the evaluation behind it — including the Raspberry Pi
+5 device run with wall-power measurement — is fully reproducible from this repository.
+Public communication about this work should rest on acceptance and on the results, and
+should not imply proceedings inclusion or presentation unless registration is completed.
+
+If registration does go ahead, the four items above are the only remaining work, and the
+paper source is ready to submit as-is.
 
 ## Retained camera-ready benchmark
 
