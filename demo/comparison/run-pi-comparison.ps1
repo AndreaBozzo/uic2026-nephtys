@@ -39,7 +39,13 @@ function Invoke-Native([string]$File, [string[]]$Arguments, [string]$Directory =
     finally { if ($Directory) { Pop-Location } }
 }
 function Invoke-Ssh([string]$Command) {
-    $output = & ssh -o BatchMode=yes -o ConnectTimeout=10 $remote $Command
+    # -n is required, not cosmetic. Without it ssh.exe forwards its inherited stdin to
+    # the remote command; when the orchestrator runs detached with redirected output,
+    # that handle never reaches EOF and ssh can block forever after the remote command
+    # has already finished. Observed hanging the golden slot indefinitely on the
+    # nats.err check. It matters most inside the measured sampling loop, where a stall
+    # would silently corrupt a run rather than just delay it.
+    $output = & ssh -n -o BatchMode=yes -o ConnectTimeout=10 $remote $Command
     if ($LASTEXITCODE -ne 0) { throw "SSH command failed: $Command" }
     return ($output -join "`n")
 }
@@ -56,7 +62,17 @@ function Get-PowerSample {
 }
 function Reset-Simulator([int]$Count) {
     Invoke-RestMethod -Method Post 'http://127.0.0.1:9091/control/reset' | Out-Null
-    $connections = (Invoke-RestMethod 'http://127.0.0.1:9091/stats').connections
+    # The tool attaches its WebSocket client asynchronously once its stream is
+    # registered, and the Pi takes longer to get there than the Windows host did, so
+    # wait for the single expected client rather than asserting on it immediately. The
+    # "exactly one client" gate is preserved: anything other than 1 still fails.
+    $connections = 0
+    $deadline = (Get-Date).AddSeconds(30)
+    do {
+        $connections = (Invoke-RestMethod 'http://127.0.0.1:9091/stats').connections
+        if ($connections -eq 1) { break }
+        Start-Sleep -Milliseconds 250
+    } while ((Get-Date) -lt $deadline)
     if ($connections -ne 1) { throw "Expected one simulator client, found $connections" }
     Invoke-RestMethod -Method Post -ContentType application/json -Body (@{events=$Count}|ConvertTo-Json -Compress) 'http://127.0.0.1:9091/control/run' | Out-Null
 }
@@ -91,8 +107,13 @@ function Reset-Tool([string]$System) {
     throw "Expected one simulator connection, found $c"
 }
 function Mean($Values) { if(-not $Values){return 0}; return ($Values|Measure-Object -Average).Average }
-function Start-Collector([string]$Prefix) {
-    $p=Start-Process (Join-Path $bin 'collector.exe') -ArgumentList @('-nats',"nats://${PiHost}:4322",'-http','127.0.0.1:9092','-create-stream=true') -PassThru -WindowStyle Hidden -RedirectStandardOutput "$Prefix.collector.out" -RedirectStandardError "$Prefix.collector.err"
+function Start-Collector([string]$Prefix,[bool]$CreateStream) {
+    # Only one process may create the NEPHTYS JetStream stream. Nephtys creates it with
+    # file storage; the collector would create it with memory storage, and the second
+    # writer then fails AddStream with "stream name already in use" because the configs
+    # differ. The Nephtys slots therefore let the tool own the stream, and the Node-RED
+    # slots let the collector own it, matching run-comparison.ps1.
+    $p=Start-Process (Join-Path $bin 'collector.exe') -ArgumentList @('-nats',"nats://${PiHost}:4322",'-http','127.0.0.1:9092',"-create-stream=$($CreateStream.ToString().ToLowerInvariant())") -PassThru -WindowStyle Hidden -RedirectStandardOutput "$Prefix.collector.out" -RedirectStandardError "$Prefix.collector.err"
     Wait-Http 'http://127.0.0.1:9092/healthz' 15 | Out-Null
     return $p
 }
@@ -107,12 +128,19 @@ function Invoke-Slot([string]$System,[int]$Trial,[int]$Order,[int]$Attempt,[int]
     $prefix=Join-Path $ResultsDir ('{0:D2}-{1}-trial-{2}-attempt-{3}' -f $Order,$System,$Trial,$Attempt)
     $collector=$null
     try {
-        Invoke-Ssh "$remoteRoot/pi/remote-control.sh stop-all"
-        Invoke-Ssh "$remoteRoot/pi/remote-control.sh start-nats"
+        Invoke-Ssh "$remoteRoot/pi/remote-control.sh stop-all" | Out-Null
+        Invoke-Ssh "$remoteRoot/pi/remote-control.sh start-nats" | Out-Null
         Wait-Http "http://${PiHost}:8322/healthz" 20 | Out-Null
-        $collector=Start-Collector $prefix
-        Invoke-Ssh "$remoteRoot/pi/remote-control.sh start-$System"
-        if($System -eq 'nephtys'){Wait-Http "http://${PiHost}:3002/healthz" 30|Out-Null;Register-Nephtys}else{Wait-Http "http://${PiHost}:1880" 45|Out-Null}
+        if($System -eq 'nephtys'){
+            Invoke-Ssh "$remoteRoot/pi/remote-control.sh start-nephtys" | Out-Null
+            Wait-Http "http://${PiHost}:3002/health" 30 | Out-Null
+            Register-Nephtys
+            $collector=Start-Collector $prefix $false
+        } else {
+            $collector=Start-Collector $prefix $true
+            Invoke-Ssh "$remoteRoot/pi/remote-control.sh start-nodered" | Out-Null
+            Wait-Http "http://${PiHost}:1880" 45 | Out-Null
+        }
         Reset-Simulator $WarmupEvents; Wait-Simulator ([math]::Ceiling($WarmupEvents/40)+20)|Out-Null
         Start-Sleep -Seconds 6
         Reset-Tool $System
@@ -147,7 +175,9 @@ function Invoke-Slot([string]$System,[int]$Trial,[int]$Order,[int]$Attempt,[int]
         Invoke-Ssh "! grep -Eiq 'fatal|panic|error' $remoteRoot/run/nats.err"|Out-Null
         $samples|Export-Csv "$prefix.samples.csv" -NoTypeInformation
         $throttled=@($samples|Where-Object {$_.throttled -ne '0x0'}).Count
-        $duration=([DateTimeOffset]::Parse($sim.run_finished_at)-[DateTimeOffset]::Parse($sim.run_started_at)).TotalSeconds
+        # The simulator reports these as started_at / completed_at (see sensor-sim runStats).
+        $duration=(([datetime]$sim.completed_at).ToUniversalTime()-([datetime]$sim.started_at).ToUniversalTime()).TotalSeconds
+        if($duration -le 0){throw "Simulator reported a non-positive run duration"}
         $energy=[double]$endPower.energy_wh-[double]$startPower.energy_wh
         $result=[ordered]@{order=$Order;system=$System;trial=$Trial;attempt=$Attempt;valid=($sim.events_sent-eq $MeasuredEvents -and $output.malformed_messages-eq 0 -and $throttled-eq 0 -and $energy-gt 0);invalid_reason='';input_events=$sim.events_sent;input_bytes=$sim.bytes_sent;output_messages=$output.output_messages;output_bytes=$output.output_payload_bytes;retained_events=$output.output_events;sequence_sha256=$output.sequence_sha256;throughput_eps=$sim.events_sent/$duration;byte_reduction_percent=100*(1-$output.output_payload_bytes/$sim.bytes_sent);message_reduction_percent=100*(1-$output.output_messages/$sim.events_sent);tool_rss_mean_mb=Mean @($samples.tool_rss_mb);tool_rss_peak_mb=($samples.tool_rss_mb|Measure-Object -Maximum).Maximum;nats_rss_mean_mb=Mean @($samples.nats_rss_mb);stack_rss_mean_mb=(Mean @($samples.tool_rss_mb))+(Mean @($samples.nats_rss_mb));tool_cpu_mean_percent=Mean @($samples|Select-Object -Skip 1 -ExpandProperty tool_cpu_percent);nats_cpu_mean_percent=Mean @($samples|Select-Object -Skip 1 -ExpandProperty nats_cpu_percent);latency_p50_ms=$output.latency_p50_ms;latency_p95_ms=$output.latency_p95_ms;temperature_mean_c=Mean @($samples.temperature_c);temperature_peak_c=($samples.temperature_c|Measure-Object -Maximum).Maximum;throttled_samples=$throttled;energy_wh=$energy;joules_per_input_event=($energy*3600/$sim.events_sent);power_mean_w=Mean @($samples.watts)}
         if(-not $result.valid){$result.invalid_reason='event loss, malformed output, throttling, or invalid power delta'}
@@ -158,7 +188,7 @@ function Invoke-Slot([string]$System,[int]$Trial,[int]$Order,[int]$Attempt,[int]
         $failed|ConvertTo-Json|Set-Content "$prefix.invalid.json"
         return $failed
     } finally {
-        try { & scp -q -r "${remote}:${remoteRoot}/run" "$prefix.remote" } catch {}
+        try { & scp -q -r "${remote}:${remoteRoot}/run" "$prefix.remote" | Out-Null } catch {}
         try { Invoke-Ssh "$remoteRoot/pi/remote-control.sh stop-all"|Out-Null } catch {}
         Stop-Local $collector
     }
@@ -168,7 +198,7 @@ if((git -C $NephtysSource rev-parse HEAD).Trim() -ne $expectedCommit){throw 'Nep
 if(!(Test-Path $PowerSampleScript)){throw 'Power sample adapter not found'}
 Invoke-Ssh 'true'|Out-Null
 $oldGoos=$env:GOOS;$oldGoarch=$env:GOARCH;$oldCgo=$env:CGO_ENABLED
-try{$env:GOOS='linux';$env:GOARCH='arm64';$env:CGO_ENABLED='0';Invoke-Native go @('build','-o',(Join-Path $bin 'nephtys'),'.') $NephtysSource}
+try{$env:GOOS='linux';$env:GOARCH='arm64';$env:CGO_ENABLED='0';Invoke-Native go @('build','-o',(Join-Path $bin 'nephtys'),'./cmd/nephtys') $NephtysSource}
 finally{$env:GOOS=$oldGoos;$env:GOARCH=$oldGoarch;$env:CGO_ENABLED=$oldCgo}
 Invoke-Native go @('build','-o',(Join-Path $bin 'sensor-sim.exe'),'.') (Join-Path $root 'sensor-sim')
 Invoke-Native go @('build','-o',(Join-Path $bin 'collector.exe'),'.') (Join-Path $comparison 'collector')

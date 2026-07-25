@@ -1,0 +1,15 @@
+{
+  "model": "Raspberry Pi 5 Model B Rev 1.1\u0000",
+  "kernel": "6.18.34+rpt-rpi-2712\n",
+  "os": "Debian GNU/Linux 13 (trixie)\n",
+  "governor": "ondemand\n",
+  "firmware": "2026/01/21 13:38:47  Copyright (c) 2012 Broadcom version ab8a9dde (release) (embedded) ",
+  "timestamp_utc": "2026-07-25T07:57:43.7778613+00:00",
+  "nephtys_commit": "c146ee7c397fd415194635b0e872d30f3cc87c0a",
+  "power_adapter": "C:\\bench\\sample-power.ps1",
+  "power_meter_model": "Shelly Plug S MTR Gen3 (S3PL-30110EU), fw 1.8.99-plugmg3prod0, no calibration certificate",
+  "power_meter_resolution_wh": 0.206,
+  "ambient_temperature_c": 26.0,
+  "os_image_release": "Raspberry Pi OS reference 2026-06-18 (Debian 13 trixie, pi-gen ca8aeed0 stage4 desktop image; lightdm stopped for the run)",
+  "storage": "Samsung Portable SSD T7 931.5 GB via USB 3.x (no microSD present)"
+}

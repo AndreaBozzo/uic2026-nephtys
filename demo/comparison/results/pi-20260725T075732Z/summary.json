@@ -1,0 +1,146 @@
+{
+  "byte_reduction_percent": {
+    "nephtys": {
+      "mean": 67.29579350702718,
+      "sample_sd": 0.0,
+      "unit": "%"
+    },
+    "nodered": {
+      "mean": 67.29579350702718,
+      "sample_sd": 0.0,
+      "unit": "%"
+    }
+  },
+  "message_reduction_percent": {
+    "nephtys": {
+      "mean": 98.70833333333333,
+      "sample_sd": 0.0,
+      "unit": "%"
+    },
+    "nodered": {
+      "mean": 98.70833333333333,
+      "sample_sd": 0.0,
+      "unit": "%"
+    }
+  },
+  "tool_rss_mean_mb": {
+    "nephtys": {
+      "mean": 19.507841363117475,
+      "sample_sd": 0.07452046218930378,
+      "unit": "MB"
+    },
+    "nodered": {
+      "mean": 128.47003424657535,
+      "sample_sd": 0.43708724445657143,
+      "unit": "MB"
+    }
+  },
+  "stack_rss_mean_mb": {
+    "nephtys": {
+      "mean": 38.84567269440985,
+      "sample_sd": 0.09872446742205684,
+      "unit": "MB"
+    },
+    "nodered": {
+      "mean": 147.06792237442923,
+      "sample_sd": 0.4841303205560828,
+      "unit": "MB"
+    }
+  },
+  "tool_cpu_mean_percent": {
+    "nephtys": {
+      "mean": 0.3227113934553111,
+      "sample_sd": 0.0032116979669064272,
+      "unit": "% one logical CPU"
+    },
+    "nodered": {
+      "mean": 0.7197238998209862,
+      "sample_sd": 0.006341135485701589,
+      "unit": "% one logical CPU"
+    }
+  },
+  "latency_p50_ms": {
+    "nephtys": {
+      "mean": 1006.0,
+      "sample_sd": 0.0,
+      "unit": "ms"
+    },
+    "nodered": {
+      "mean": 1009.0,
+      "sample_sd": 1.0,
+      "unit": "ms"
+    }
+  },
+  "latency_p95_ms": {
+    "nephtys": {
+      "mean": 2009.0,
+      "sample_sd": 1.0,
+      "unit": "ms"
+    },
+    "nodered": {
+      "mean": 2013.0,
+      "sample_sd": 1.0,
+      "unit": "ms"
+    }
+  },
+  "temperature_mean_c": {
+    "nephtys": {
+      "mean": 47.262689220976995,
+      "sample_sd": 0.5454925635397159,
+      "unit": "C"
+    },
+    "nodered": {
+      "mean": 47.229223744292284,
+      "sample_sd": 0.3203667416387392,
+      "unit": "C"
+    }
+  },
+  "temperature_peak_c": {
+    "nephtys": {
+      "mean": 49.199999999999996,
+      "sample_sd": 1.5588457268119913,
+      "unit": "C"
+    },
+    "nodered": {
+      "mean": 49.03333333333333,
+      "sample_sd": 1.2701705922171784,
+      "unit": "C"
+    }
+  },
+  "power_mean_w": {
+    "nephtys": {
+      "mean": 3.6097114985471164,
+      "sample_sd": 0.005228348404209871,
+      "unit": "W"
+    },
+    "nodered": {
+      "mean": 3.584474885844751,
+      "sample_sd": 0.013614658918608327,
+      "unit": "W"
+    }
+  },
+  "energy_wh": {
+    "nephtys": {
+      "mean": 0.3073443333333333,
+      "sample_sd": 0.0010116423939976371,
+      "unit": "Wh"
+    },
+    "nodered": {
+      "mean": 0.304971,
+      "sample_sd": 0.0012384187498580474,
+      "unit": "Wh"
+    }
+  },
+  "joules_per_input_event": {
+    "nephtys": {
+      "mean": 0.09220329999999999,
+      "sample_sd": 0.0003034927181992893,
+      "unit": "J/event"
+    },
+    "nodered": {
+      "mean": 0.0914913,
+      "sample_sd": 0.0003715256249574191,
+      "unit": "J/event"
+    }
+  }
+}

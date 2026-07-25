@@ -12,7 +12,7 @@ fi
 
 sudo apt-get update
 sudo apt-get install -y curl xz-utils ca-certificates git jq
-mkdir -p "${ROOT}/bin" "${ROOT}/nodered" "${ROOT}/run"
+mkdir -p "${ROOT}/bin" "${ROOT}/nodered" "${ROOT}/run" "${ROOT}/node"
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "${tmp}"' EXIT
